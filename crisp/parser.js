@@ -27,7 +27,11 @@ function parse(code) {
                     code = code.slice(1);
                 }
             }
-            return new Node("float", parseFloat(num));
+            if (num === "-") {
+                return new Node("identifer", num);
+            } else {
+                return new Node("float", parseFloat(num));
+            }
         } else if (c === "'" && code[0] === "(") {
             var toRet = new Node("list", "");
             code = code.slice(1);
@@ -69,8 +73,10 @@ function parse(code) {
     return _parse();
 }
 
+var globals = {};
+
 function eval(root) {
-    var stack = [];
+    var stack = [globals];
     function _eval(n) {
         switch (n.type) {
             case "string":
@@ -112,6 +118,12 @@ function eval(root) {
                         stack.push(frame);
                         n.eval = _eval(n.children[2]).eval;
                         stack.pop();
+                    break;
+                    case "g":
+                        for (var i = 1; i < n.children.length; i+=2) {
+                            globals[n.children[i].value] = 
+                                    _eval(n.children[i+1]).eval;
+                        }
                     break;
                     case "-":
                         n.eval = _eval(n.children[1]).eval.value;
@@ -185,4 +197,5 @@ function eval(root) {
     }
     return _eval(root);
 }
-console.log(eval(parse("(def '(t (fun '(x) (if (= x 10) '() (cons x (t (+ 1 x)))))) (t 5))")));
+console.log(eval(parse("(g nth (fun '(l n) (if (= 0 n) (car l) (nth (cdr l) (- n 1)))))")));
+console.log(eval(parse("(nth '(1 2 3 4 5) 3)")));

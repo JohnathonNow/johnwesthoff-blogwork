@@ -13,26 +13,12 @@ function parse(code) {
         c = code[0];
         code = code.slice(1);
         if (c === "(") {
-            if (code[0] == "(") {
-                var toRet = new Node("function", "user");
-                toRet.eval = _parse();
-                while (code[0] !== ")" && code[0]) {
-                    toRet.children.push(_parse());
-                }
-                return toRet;
-            } else {
-                id = "";
-                while (code[0] !== " " && code[0] !== ")") {
-                    id += code[0];
-                    code = code.slice(1);
-                }
-                var toRet = new Node("function", id);
-                while (code[0] !== ")" && code[0]) {
-                    toRet.children.push(_parse());
-                }
-                code = code.slice(1);
-                return toRet;
+            var toRet = new Node("function", "");
+            while (code[0] !== ")" && code[0]) {
+                toRet.children.push(_parse());
             }
+            code = code.slice(1);
+            return toRet;
         } else if ((c >= "0" && c <= "9") || c == "." || c == "-") {
             num = c;
             while (code[0] !== " " && code[0] !== ")" && code[0]) {
@@ -90,13 +76,13 @@ function eval(root) {
             case "string":
             case "float":
             case "boolean":
-                n.eval = n.value;
+                n.eval = n;
                 return n;
             case "list":
                 for (var i = 0; i < n.children.length; i++) {
                     _eval(n.children[i]);
                 }
-                n.eval = n.children;
+                n.eval = n;
                 return n;
             case "identifier":
                 for (var i = stack.length - 1; i >= 0; i--) {
@@ -107,15 +93,15 @@ function eval(root) {
                 }
                 return n;
             case "function":
-                switch (n.value) {
+                switch (n.children[0].value) {
                     case "fun":
-                        _eval(n.children[0]);
-                        n.eval = new Node("function", "user");
-                        n.eval.eval = n.children[1];
-                        n.eval.children = n.children;
+                        _eval(n.children[1]);
+                        n.eval = new Node("function", "");
+                        n.eval.children = n.children.slice(1);
+                        n.eval.children.unshift(new Node("identifier", ""));
                     break;
                     case "def":
-                        var pairs = _eval(n.children[0]).eval;
+                        var pairs = _eval(n.children[1]).eval.children;
                         for (var i = 1; i < pairs.length; i+=2) {
                             _eval(pairs[i]);
                         }
@@ -124,71 +110,73 @@ function eval(root) {
                             frame[pairs[i].value] = pairs[i+1].eval;
                         }
                         stack.push(frame);
-                        n.eval = _eval(n.children[1]);
+                        n.eval = _eval(n.children[2]).eval;
                         stack.pop();
                     break;
                     case "-":
-                        n.eval = _eval(n.children[i]).eval;
-                        for (var i = 1; i < n.children.length; i++) {
-                            n.eval -= _eval(n.children[i]).eval;
+                        n.eval = _eval(n.children[1]).eval.value;
+                        for (var i = 2; i < n.children.length; i++) {
+                            n.eval -= _eval(n.children[i]).eval.value;
                         }
+                        n.eval = new Node("float", n.eval);
                     break;
                     case "+":
                         n.eval = 0;
-                        for (var i = 0; i < n.children.length; i++) {
-                            n.eval += _eval(n.children[i]).eval;
+                        for (var i = 1; i < n.children.length; i++) {
+                            n.eval += _eval(n.children[i]).eval.value;
                         }
+                        n.eval = new Node("float", n.eval);
                     break;
                     case "=":
-                        n.eval = _eval(n.children[0]).eval === 
-                            _eval(n.children[1]).eval;
+                        n.eval = new Node("boolean", 
+                            _eval(n.children[2]).eval.value === 
+                            _eval(n.children[1]).eval.value);
                     break;
                     case "do":
-                        for (var i = 0; i < n.children.length; i++) {
+                        for (var i = 1; i < n.children.length; i++) {
                             n.eval = _eval(n.children[i]).eval;
                         }
                     break;
                     case "if":
-                        var cond = _eval(n.children[0]).eval;
+                        var cond = _eval(n.children[1]).eval.value;
                         if (cond === false) {
-                            n.eval = _eval(n.children[2]).eval;
+                            n.eval = _eval(n.children[3]).eval;
                         } else {
-                            n.eval = _eval(n.children[1]).eval;
+                            n.eval = _eval(n.children[2]).eval;
                         }
                     break;
                     case "car":
-                        _eval(n.children[0]);
-                        n.eval = n.children[0].eval[0].eval;
+                        n.eval = _eval(n.children[1]).eval.children[0].eval;
                     break;
                     case "cdr":
-                        _eval(n.children[0]);
-                        n.eval = n.children[0].eval.slice(1);
+                        n.eval = new Node("list", "");
+                        n.eval.children = _eval(n.children[1]).
+                                          eval.children.slice(1);
+                        n.eval.eval = n.eval;
                     break;
                     case "cons":
-                        n.eval = new Node("list", "");
-                        n.eval.children =
-                            _eval(n.children[n.children.length - 1]).eval;
-                        for (var i = 0; i < n.children.length - 1; i++) {
-                            n.eval.children.push(_eval(n.children[i]).eval);
+                        var b = _eval(n.children[n.children.length - 1]).eval;
+                        for (var i = 1; i < n.children.length - 1; i++) {
+                            b.children.push(_eval(n.children[i]).eval);
                         }
-                        n.eval.eval = n.eval.children;
+                        n.eval = b;
                     break;
                     default:
                         for (var i = stack.length - 1; i >= 0; i--) {
-                            if (n.value in stack[i]) {
-                                n.eval = stack[i][n.value];
+                            if (n.children[0].value in stack[i]) {
+                                n.children[0] = stack[i][n.children[0].value];
                                 break;
                             }
                         }
-                    case "user":
-                        var vars = _eval(n.eval.children[0]).eval;
-                        var vals = n.children;
+                    case "":
+                        var vars = _eval(n.children[0].children[1]).eval;
+                        var vals = n.children.slice(1);
                         var frame = {};
-                        for (var i = 0; i < vals.length; i+=1) {
-                            frame[vars[i].value] = _eval(vals[i]).eval;
+                        for (var i = 0; i < vals.length; i += 1) {
+                            frame[vars.children[i].value] = _eval(vals[i]).eval;
                         }
                         stack.push(frame);
-                        n.eval = _eval(n.eval.children[1]).eval;
+                        n.eval = _eval(n.children[0].children[2]).eval;
                         stack.pop();
                     break;
                 }
@@ -197,5 +185,4 @@ function eval(root) {
     }
     return _eval(root);
 }
-console.log(eval(parse("(cons 1 2 3 '())")));
-console.log(eval(parse("(car (def '(t (fun '(x) (if (= x 10) '(0) (cons x (t (+ 1 x))))) x 0) (t x)))")));
+console.log(eval(parse("(def '(t (fun '(x) (if (= x 10) '() (cons x (t (+ 1 x)))))) (t 5))")));

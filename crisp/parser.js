@@ -197,5 +197,3 @@ function eval(root) {
     }
     return _eval(root);
 }
-console.log(eval(parse("(g nth (fun '(l n) (if (= 0 n) (car l) (nth (cdr l) (- n 1)))))")));
-console.log(eval(parse("(nth '(1 2 3 4 5) 3)")));

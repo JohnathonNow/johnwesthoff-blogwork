@@ -13,7 +13,7 @@ function parse(code) {
         c = code[0];
         code = code.slice(1);
         if (c === "(") {
-            var toRet = new Node("function", "");
+            var toRet = new Node("function", "function");
             while (code[0] !== ")" && code[0]) {
                 toRet.children.push(_parse());
             }
@@ -78,33 +78,36 @@ var globals = {};
 function eval(root) {
     var stack = [globals];
     function _eval(n) {
-        switch (n.type) {
-            case "string":
-            case "float":
-            case "boolean":
-                n.eval = n;
-                return n;
-            case "list":
-                for (var i = 0; i < n.children.length; i++) {
-                    _eval(n.children[i]);
+    switch (n.type) {
+        case "string":
+        case "float":
+        case "boolean":
+        case "code":
+            n.eval = n;
+            return n;
+        case "list":
+            for (var i = 0; i < n.children.length; i++) {
+                _eval(n.children[i]);
+            }
+            n.eval = n;
+            return n;
+        case "identifier":
+            for (var i = stack.length - 1; i >= 0; i--) {
+                if (n.value in stack[i]) {
+                    n.eval = stack[i][n.value];
+                    return n;
                 }
-                n.eval = n;
-                return n;
-            case "identifier":
-                for (var i = stack.length - 1; i >= 0; i--) {
-                    if (n.value in stack[i]) {
-                        n.eval = stack[i][n.value];
-                        return n;
-                    }
-                }
-                return n;
-            case "function":
+            }
+            return n;
+        case "function":
+            if (n.children[0].type !== "function") {
                 switch (n.children[0].value) {
                     case "fun":
                         _eval(n.children[1]);
-                        n.eval = new Node("function", "");
+                        n.eval = new Node("code", "");
+                        n.eval.context = stack[stack.length - 1];
                         n.eval.children = n.children.slice(1);
-                        n.eval.children.unshift(new Node("identifier", ""));
+                        n.eval.eval = n.eval;
                     break;
                     case "def":
                         var pairs = _eval(n.children[1]).eval.children;
@@ -181,19 +184,31 @@ function eval(root) {
                             }
                         }
                     case "":
-                        var vars = _eval(n.children[0].children[1]).eval;
+                        var vars = _eval(n.children[0].children[0]).eval;
                         var vals = n.children.slice(1);
                         var frame = {};
                         for (var i = 0; i < vals.length; i += 1) {
                             frame[vars.children[i].value] = _eval(vals[i]).eval;
                         }
                         stack.push(frame);
-                        n.eval = _eval(n.children[0].children[2]).eval;
+                        n.eval = _eval(n.children[0].children[1]).eval;
                         stack.pop();
                     break;
+                }} else {
+                    n.eval = _eval(n.children[0]).eval;
+                    var vars = _eval(n.eval.children[0]).eval;
+                    var vals = n.children.slice(1);
+                    var frame = n.eval.context;
+                    console.log(frame);
+                    for (var i = 0; i < vals.length; i += 1) {
+                        frame[vars.children[i].value] = _eval(vals[i]).eval;
+                    }
+                    stack.push(frame);
+                    n.eval = _eval(n.eval.children[1]).eval;
+                    stack.pop();
                 }
-                return n;
-        }
+            return n;
+    }
     }
     return _eval(root);
 }

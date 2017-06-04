@@ -212,3 +212,26 @@ function eval(root) {
     }
     return _eval(root);
 }
+function stringify(node) {
+    function _stringify(n) {
+        switch (n.eval.type) {
+            case "list":
+                var toRet = "'(";
+                for (var i = 0; i < n.eval.children.length; i++) {
+                    if (i > 0) toRet += " ";
+                    toRet += _stringify(n.eval.children[i]);
+                }
+                return toRet + ")";
+            case "code":
+                var toRet = "&ltfunction over '(";
+                for (var i = 0; i < n.eval.children[0].children.length; i++) {
+                    if (i > 0) toRet += " ";
+                    toRet += n.eval.children[0].children[i].value;
+                }
+                return toRet + ")&gt";
+            default:
+                return "" + n.eval.value;
+        }
+    }
+    return _stringify(node);
+}

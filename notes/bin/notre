@@ -1,0 +1,25 @@
+import notre
+
+UNDERLINES = {
+    '=': 'h1',
+    '-': 'h2',
+    '.': 'h3',
+}
+
+ACCENTS = {
+    '*': ['b', ''],
+    '_': ['u', ''],
+}
+
+ESCAPES = {
+    '': '\\',
+    'isin': 'ϵ',
+    'epsilon': 'ε',
+    'sigma': 'Σ',
+    'pi': 'π',
+}
+
+try:
+    print(''.join(notre.parse(ESCAPES, ACCENTS, UNDERLINES)), end='')
+except:
+    pass

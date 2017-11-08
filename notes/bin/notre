@@ -17,6 +17,9 @@ ESCAPES = {
     'epsilon': 'ε',
     'sigma': 'Σ',
     'pi': 'π',
+    'thereis': '∃',
+    'forall': '∀',
+    'lambda': 'λ',
 }
 
 try:

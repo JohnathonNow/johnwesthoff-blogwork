@@ -1,0 +1,14 @@
+img {
+    width: 20%;
+    height: auto;
+    border-style: ridge;
+    border-width: 5px;
+    border-color: red;
+}
+#canvas {
+    width: 420;
+    height: 420;
+    border-style: ridge;
+    border-width: 5px;
+    border-color: red;
+}

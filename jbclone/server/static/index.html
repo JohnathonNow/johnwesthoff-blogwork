@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!---
+    This file is the client webpage for the software on my graduation cap, Jeffrey-Gradcap.
+    Copyright (C) 2018 John Westhoff
+
+    This file is part of Jeffrey-Gradcap.
+
+    Jeffrey-Gradcap is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Jeffrey-Gradcap is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Jeffrey-Gradcap.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
+        <script src="jquery.js"></script>
+        <script src="jscolor.js"></script>
+        <link href="style.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="view">
+            <ul id='zoomable'></ul>
+        </div>
+        <br />
+        <div id="zoomout" class="btn">-</div>
+        <div id="zoomin" class="btn">+</div>
+        <input name="brush" id="brush" type="hidden" value="#ff0000">
+        <button class="jscolor {valueElement: 'brush'}" style="width:125px">Pick a color</button>
+        <br />
+        <font color="white">Click on any square to change its color. You can also click on the color chooser to choose a color.</font>
+        <br>
+        <font color="white" id="mode"></font>
+        <br>
+        <font color="white" id="users"></font>
+        <br>
+        <br>
+        <font color="white">Keep in mind these hats are worn diagonally, so the bottom right of the image is the "bottom" of the diamond, and the top left is the "top" of the diamond.</font>
+        <br>
+        <br>
+        <font color="white">Also keep in mind that the middle 4 pixels will be covered by the nub that the tassel goes around, and that the tassel will cover some random number of pixels.</font>
+        <script src="logic.js"></script>
+    </body>
+</html>

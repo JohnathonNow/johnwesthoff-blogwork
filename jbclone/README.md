@@ -15,7 +15,7 @@ Register room
 Post status
 ..
 
-- /set\_status
+- /server\_post
 - Two arguments - 'code' - the room code, and 'status' - a json object containing the new game state for the clients
 - Updates the game status, which the clients receive when they make requests
 - Returns 'status', containing the request status
@@ -23,7 +23,7 @@ Post status
 Get info
 ..
 
-- /get\_info
+- /server\_info
 - One argument - 'code' - the room code
 - Fetches the messages sent from the clients to the server, as well as the client list
 - Returns 'status', containing the request status, 'messages', containing a list of messages from the clients, and 'clients', containing a list of usernames of clients
@@ -50,7 +50,7 @@ Post message
 Get status
 ..
 
-- /user\_get
+- /user\_info
 - Two arguments - 'code' - the room code, and 'v' - the current data version the client has
 - Fetches the current game state, busy waiting based off the value of 'v'
 - Returns 'status', containing the request status, 'state', containin g the state set by the server, and 'v', containing the newest version number

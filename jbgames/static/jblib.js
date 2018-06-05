@@ -12,7 +12,7 @@ function client_register(room_code, username, callback) {
 }
 
 function client_post(room_code, message, callback) {
-    $.get("user_post", {'code': room_code, 'data': message}, function(response) {
+    $.get("user_post", {'code': room_code, 'data': JSON.stringify(message)}, function(response) {
         var data = JSON.parse(response);
         if (callback) {
             callback(data);

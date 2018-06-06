@@ -4,6 +4,9 @@ var readloop = null;
 function read() {
     server_get(roomcode, function(data) {
         console.log(data);
+        server_post(roomcode, data, function(response) {
+            console.log(response);
+        });
         readloop = setTimeout(read, 50);
     });
 }

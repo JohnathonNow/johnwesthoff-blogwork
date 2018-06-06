@@ -25,8 +25,12 @@ function client_post(room_code, message, callback) {
 function client_get(room_code, callback) {
     $.get("user_info", {'code': room_code, 'v': v}, function(response) {
         var data = JSON.parse(response);
+        console.log(data);
         if ('v' in data) {
             v = data['v'];
+        }
+        if ('state' in data) {
+            data['state'] = JSON.parse(data['state']);
         }
         if (callback) {
             callback(data);

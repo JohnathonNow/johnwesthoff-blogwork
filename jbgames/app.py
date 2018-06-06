@@ -22,7 +22,7 @@ def new_room():
         code = new_code()
         while code in rooms:
             code = new_code()
-        rooms[code] = {'messages': [], 'clients': [], 'state': {}, 'v': 1, 'lock': threading.Lock(), 'new_client': False}
+        rooms[code] = {'messages': [], 'clients': [], 'state': '{}', 'v': 0, 'lock': threading.Lock(), 'new_client': False}
         return code
     finally:
         lock.release()

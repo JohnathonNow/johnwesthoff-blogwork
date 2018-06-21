@@ -16,13 +16,13 @@ TIMEOUT = 30 #timeout for requests, for long polling
 rooms = {}
 lock = threading.Lock()
 
-def new_room():
+def new_room(game):
     lock.acquire()
     try:
         code = new_code()
         while code in rooms:
             code = new_code()
-        rooms[code] = {'messages': [], 'clients': [], 'state': '{}', 'v': 0, 'lock': threading.Lock(), 'new_client': False}
+        rooms[code] = {'messages': [], 'clients': [], 'game': game, 'state': '{}', 'v': 0, 'lock': threading.Lock(), 'new_client': False}
         return code
     finally:
         lock.release()
@@ -33,8 +33,8 @@ def new_code(size=3, chars=string.ascii_uppercase + string.digits):
 class Page(object):
 
     @cherrypy.expose
-    def new_room(self):
-        response = {'status': 'success', 'code': new_room()}
+    def new_room(self, game):
+        response = {'status': 'success', 'code': new_room(game)}
         return json.dumps(response)
 
     @cherrypy.expose
@@ -48,7 +48,7 @@ class Page(object):
             else:
                 rooms[code]['clients'].append(name)
                 rooms[code]['new_client'] = True
-                return json.dumps({'status': 'success', 'id': len(rooms[code]['clients'])})
+                return json.dumps({'status': 'success', 'game': rooms[code]['game'], 'id': len(rooms[code]['clients'])})
         finally:
             rooms[code]['lock'].release()
 

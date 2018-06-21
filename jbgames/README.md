@@ -8,8 +8,8 @@ Register room
 ..
 
 - /new\_room
-- No arguments
-- Creates a new room on the server
+- One argument - 'game' - javascript for the clients to run
+- Creates a new room on the server, running 'game'
 - Returns 'status', containing the request status, and 'code', containing the new room code
 
 Post status
@@ -37,7 +37,7 @@ Register client
 - /user\_register
 - Two arguments - 'code' - the room code, and 'name' - the username
 - Adds the user to the room's user list
-- Returns 'status', containing the request status, and 'id', a numeric id unique to that user
+- Returns 'status', containing the request status, 'id', a numeric id unique to that user, and 'game', containing the javascript for the client
 
 Post message
 ..

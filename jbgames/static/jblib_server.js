@@ -1,5 +1,5 @@
-function server_register(callback) {
-    $.get('new_room', {}, function(response) {
+function server_register(game, callback) {
+    $.get('new_room', {'game': game}, function(response) {
         var data = JSON.parse(response);
         if (callback) {
             callback(data);

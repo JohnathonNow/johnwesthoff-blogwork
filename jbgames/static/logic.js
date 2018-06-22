@@ -1,48 +1,54 @@
-var username = null;
-var roomcode = null;
+var handles = [];
 var readloop = null;
-
-function read() {
-    client_get(roomcode, function(data) {
-        console.log(data);
-        readloop = setTimeout(read, 50);
-    });
-}
-
-function login() { 
-    roomcode = $('#roomcode').val();
-    username = $('#username').val();
-    client_register(roomcode, username, function(data) {
-        if (data['status'] === 'success') {
-            read();
-            $('#menu').hide();
-            $('#game').empty();
-            $('#game').show();
-            $("body").append($("<script/>", { html: data['game'] }));
-        } else {
-            console.log(data);
-        }
-    });
-}
 
 function logout() {
     $('#menu').show();
     $('#game').empty();
     $('#game').hide();
-    clearInterval(readloop);
+    clearTimeout(readloop);
+    for (var i = 0; i < handles.length; i++) {
+        clearInterval(handles[i]);
+    }
+    handles.length = 0;
 }
 
-function write() {
-    var stuff = {"username": username, "data": "haha yes"};
-    client_post(roomcode, stuff, function(data) {
-        if (data['status'] === 'success') {
-            console.log(data);
-        } else {
-            console.log(data);
-        }
-    });
+function addLoop(fun, interval) {
+    handles.push(setInterval(fun, interval)); 
 }
 
 $(function() {
+    var username = null;
+    var roomcode = null;
+
+    function read() {
+        client_get(roomcode, function(data) {
+            onRead(data);
+            readloop = setTimeout(read, 50);
+        });
+    }
+
+    function login() { 
+        roomcode = $('#roomcode').val();
+        username = $('#username').val();
+        client_register(roomcode, username, function(data) {
+            if (data['status'] === 'success') {
+                read();
+                $('#menu').hide();
+                $('#game').empty();
+                $('#game').show();
+                $("body").append($("<script/>", { html: data['game'] }));
+                onLoad(data);
+            } else {
+                console.log(data);
+            }
+        });
+    }
+
+
+    function write(data) {
+        var stuff = {"username": username, "data": data};
+        client_post(roomcode, stuff, onWrite);
+    }
+
     $('#connect').on('click', function(e) { login(); });
 });

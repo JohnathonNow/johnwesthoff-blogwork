@@ -13,7 +13,7 @@ function read() {
 
 $(function() {
     $('#connect').on('click', function(e) {
-        server_register('alert(5);logout();', function(data) {
+        server_register('function onLoad(d) { console.log("loaded"); } function onRead(d) { console.log(d); }', function(data) {
             if (data['status'] === 'success') {
                 console.log(data);
                 roomcode = data['code'];

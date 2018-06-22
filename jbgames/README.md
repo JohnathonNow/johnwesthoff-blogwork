@@ -54,3 +54,30 @@ Get status
 - Two arguments - 'code' - the room code, and 'v' - the current data version the client has
 - Fetches the current game state, busy waiting based off the value of 'v'
 - Returns 'status', containing the request status, 'state', containin g the state set by the server, and 'v', containing the newest version number
+
+
+Client API
+===
+
+Provided
+--
+
+logout()
+..
+
+
+addLoop(fun, interval)
+..
+
+User Defined
+--
+
+onLoad(gamestate)
+..
+
+onRead(gamestate)
+..
+
+onWrite(response)
+..
+

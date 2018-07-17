@@ -1,3 +1,13 @@
+function server_games(callback) {
+    $.get('games.json', function(response) {
+        if (callback) {
+            callback(response);
+        }
+    }).fail(function() {
+        server_register(callback);
+    });
+}
+
 function server_register(game, callback) {
     $.get('new_room', {'game': game}, function(response) {
         var data = JSON.parse(response);

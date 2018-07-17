@@ -1,5 +1,6 @@
 var handles = [];
 var readloop = null;
+var games = null;
 
 function logout() {
     $('#menu').show();
@@ -20,6 +21,10 @@ $(function() {
     var username = null;
     var roomcode = null;
 
+    client_games(function (d) {
+        games = d;
+    });
+
     function read() {
         client_get(roomcode, function(data) {
             onRead(data);
@@ -28,6 +33,7 @@ $(function() {
     }
 
     function login() { 
+        console.log(games);
         roomcode = $('#roomcode').val();
         username = $('#username').val();
         client_register(roomcode, username, function(data) {
@@ -36,7 +42,8 @@ $(function() {
                 $('#menu').hide();
                 $('#game').empty();
                 $('#game').show();
-                $("body").append($("<script/>", { html: data['game'] }));
+                $("body").append($("<script/>", { html: games[0]["clientjs"]}));
+                $("body").append($(games[0]["clienthtml"]));
                 onLoad(data);
             } else {
                 console.log(data);

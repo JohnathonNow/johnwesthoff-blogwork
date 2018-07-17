@@ -81,3 +81,30 @@ onRead(gamestate)
 onWrite(response)
 ..
 
+Server API
+===
+
+Provided
+--
+
+shutdown()
+..
+
+post(state)
+..
+
+addLoop(fun, interval)
+..
+
+User Defined
+--
+
+onLoad(data)
+..
+
+onRead(messages)
+..
+
+onPost(response)
+..
+

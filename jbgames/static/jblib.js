@@ -1,4 +1,15 @@
 var v = 0;
+
+function client_games(callback) {
+    $.get('games.json', function(response) {
+        if (callback) {
+            callback(response);
+        }
+    }).fail(function() {
+        server_register(callback);
+    });
+}
+
 function client_register(room_code, username, callback) {
     v = 0;
     $.get("user_register", {'code': room_code, 'name': username}, function(response) {

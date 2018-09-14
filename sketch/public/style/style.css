@@ -1,0 +1,40 @@
+#guess {
+    width: 90%;
+}
+
+#drawing {
+    display: inline-block;
+    width:45%;
+    text-align: right;
+}
+
+#dummy {
+    display: inline-block;
+    width:45%;
+}
+
+#controls {
+    display: inline-block;
+    width:45%;
+    text-align: right;
+}
+
+#answers {
+    display: inline-block;
+    width:45%;
+    text-align: left;
+    overflow-y:auto;
+    height: 420px;
+}
+
+#canvas {
+    width: 420px;
+    height: 420px;
+    border-style: ridge;
+    border-width: 5px;
+    border-color: gray;
+}
+
+#game {
+    display:none;
+}

@@ -147,7 +147,7 @@ function getimg() {
         success: function (d) {
             console.log(d);
             var newImg = document.createElement("img");
-            newImg.setAttribute('src', d);
+            newImg.setAttribute('src', JSON.parse(d)['image']);
             canvas.getContext("2d").drawImage(newImg,0,0,420,420);
         },
         error: function (e) {
@@ -162,7 +162,7 @@ function getguesses() {
         type: "GET",
         success: function (d) {
             console.log(d);
-            var data = JSON.parse(d);
+            var data = JSON.parse(d)["payload"]["guesses"];
             var msges = '';
             for (var i = 0; i < data.length; i++) {
                  msges += '<b>' + data[i].name + ':</b> ' + data[i].guess + '<br>'

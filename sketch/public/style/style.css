@@ -1,3 +1,9 @@
+.warn {
+    width: 100%;
+    background-color: #ff6b6b;
+    display: inline-block;
+}
+
 #guess {
     width: 90%;
 }

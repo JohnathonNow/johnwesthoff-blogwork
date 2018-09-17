@@ -8,7 +8,12 @@ var size = 5;
 var mode;
 var TRACEBACK = 0;
 
+
+var gLocalMessages = [];
 var gName = null;
+var gImageV = 0;
+var gGuessV = 0;
+var gDrawer = "";
 
 function loaded() {
     canvas = document.getElementById('canvas');
@@ -19,6 +24,8 @@ function loaded() {
     mode = DRAW_MODE;
     var touch = function(e){
         e.preventDefault();
+        if (gDrawer !== gName) return;
+
         TRACEBACK = 0;
         paint = true;
         var border = getComputedStyle(this).getPropertyValue('border-width');
@@ -67,7 +74,6 @@ function loaded() {
     $('#canvas').on('touchmove mousemove', untouch);
     $('#canvas').on('touchend mouseleave mouseup', function(e) {
         paint = false;
-        getguesses();
         send();
     } );
     $('#colorpicker').on('change', function(e) { 
@@ -80,13 +86,14 @@ function loaded() {
     $("#name").on("keydown",function search(e) {
     if(e.keyCode == 13) {
         gName = $('#name').val();
+        register();
         $('#game').show();
         $('#login').hide();
     }});
     $("#guess").on("keydown",function search(e) {
     if(e.keyCode == 13) {
-        getimg();
         guess($('#guess').val());
+        $('#guess').val('');
     }});
 }
 
@@ -142,32 +149,69 @@ function redraw(){
 
 function getimg() {
     $.ajax({
-        url: "/rest",
+        url: "/rest/"+gImageV,
         type: "POST",
         success: function (d) {
             console.log(d);
-            var newImg = document.createElement("img");
-            newImg.setAttribute('src', JSON.parse(d)['image']);
-            canvas.getContext("2d").drawImage(newImg,0,0,420,420);
+            var response = JSON.parse(d)['payload'];
+            gImageV = response['version'];
+            if (gDrawer !== gName) {
+                var newImg = document.createElement("img");
+                newImg.setAttribute('src', response['image']);
+                context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+                context.drawImage(newImg,0,0,420,420);
+            }
+            setTimeout(getimg(), 10);
         },
         error: function (e) {
-
+            setTimeout(getimg(), 10);
         }
     });
 }
 
 function getguesses() {
     $.ajax({
-        url: "/guess",
+        url: "/guess/"+gGuessV+"/"+gName,
         type: "GET",
         success: function (d) {
             console.log(d);
-            var data = JSON.parse(d)["payload"]["guesses"];
+            var response = JSON.parse(d);
+            var messages = response["messages"];
             var msges = '';
-            for (var i = 0; i < data.length; i++) {
-                 msges += '<b>' + data[i].name + ':</b> ' + data[i].guess + '<br>'
+            console.log(messages);
+            for (var i = 0; i < messages.length; i++) {
+                if (messages[i].name === "") {
+                    msges += '<b class="warn">' + messages[i].message + '</b><br>'
+                } else {
+                    msges += '<b>' + messages[i].name + ':</b> ' + messages[i].message + '<br>'
+                }
             }
-            $('#answers').html(msges);
+
+            for (var i = 0; i < gLocalMessages.length; i++) {
+                msges += '<b class="warn">' + gLocalMessages[i] + '</b><br>'
+            }
+
+            $('#answers').html($('#answers').html() + msges);
+            gGuessV = response['payload']["version"]; 
+            gDrawer = response['payload']["drawer"]; 
+            setTimeout(getguesses(), 10);
+        },
+        error: function (e) {
+            console.log(e);
+            setTimeout(getguesses(), 10);
+        }
+    });
+}
+
+function register() {
+    $.ajax({
+        url: "/guess",
+        type: "POST",
+		data: {"name": gName },
+        success: function (d) {
+            getguesses();
+            getimg();
+            console.log(d);
         },
         error: function (e) {
 

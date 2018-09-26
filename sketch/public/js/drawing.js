@@ -49,7 +49,7 @@ function loaded() {
     var untouch = function(e){
         e.preventDefault();
         if (paint) {
-            var b = getComputedStyle(this).getPropertyValue('border-width');
+            var b = getComputedStyle(this).getPropertyValue('border-left-width');
             b = parseInt(b);
             var touches = e.originalEvent.changedTouches;
             if (touches) {
@@ -128,7 +128,10 @@ function addClick(x, y, c, s, m, dragging)
 }
 
 function redraw(){
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    if (gDrawer !== gName) {
+        return;
+    }
+    //context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     context.lineJoin = "round";
 			
     for(var i=0; i < strokes.length; i++) {		
@@ -152,7 +155,6 @@ function getimg() {
         url: "/rest/"+gImageV,
         type: "POST",
         success: function (d) {
-            console.log(d);
             var response = JSON.parse(d)['payload'];
             gImageV = response['version'];
             if (gDrawer !== gName) {
@@ -174,11 +176,9 @@ function getguesses() {
         url: "/guess/"+gGuessV+"/"+gName,
         type: "GET",
         success: function (d) {
-            console.log(d);
             var response = JSON.parse(d);
             var messages = response["messages"];
             var msges = '';
-            console.log(messages);
             for (var i = 0; i < messages.length; i++) {
                 if (messages[i].name === "") {
                     msges += '<b class="warn">' + messages[i].message + '</b><br>'
@@ -211,7 +211,6 @@ function register() {
         success: function (d) {
             getguesses();
             getimg();
-            console.log(d);
         },
         error: function (e) {
 
@@ -225,7 +224,6 @@ function guess(g) {
         type: "PUT",
 		data: {"name": gName, "guess": g},
         success: function (d) {
-            console.log(d);
         },
         error: function (e) {
 
@@ -234,16 +232,17 @@ function guess(g) {
 }
 
 function send() {
-	var dataURL = canvas.toDataURL();
-    $.ajax({
-        url: "/rest",
-        type: "PUT",
-		data: {"img": dataURL},
-        success: function (d) {
-            console.log(d);
-        },
-        error: function (e) {
+    if (gDrawer === gName) {
+        var dataURL = canvas.toDataURL();
+        $.ajax({
+            url: "/rest",
+            type: "PUT",
+            data: {"img": dataURL},
+            success: function (d) {
+            },
+            error: function (e) {
 
-        }
-    });
+            }
+        });
+    }
 }

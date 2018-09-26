@@ -5,6 +5,7 @@ import json
 import threading
 import string
 import time
+import Levenshtein
 from datetime import datetime
 from collections import defaultdict
 
@@ -80,7 +81,12 @@ class GuessWebApp(object):
     def PUT(self, name, guess):
         with game_lock:
             player_time[name] = 3
-            broadcast(name, guess)
+            if isGuessCorrect(guess):
+                broadcast("", "{} got it!".format(name))
+            elif isGuessClose(guess):
+                send(name, "", "\"{}\" is close!".format(guess))
+            else:
+                broadcast(name, guess)
             game_state["version"] += 1
             return "ok"
 
@@ -129,8 +135,15 @@ class SketchWebApp(object):
     def DELETE(self):
         return "ok"
 
+def isGuessCorrect(guess):
+    return guess == word
+
+def isGuessClose(guess):
+    return (guess in word and len(guess) > 3) or Levenshtein.distance(str(guess), str(word)) <= 3
+
 
 def gameThread():
+    global word
     turn_time = 0
     player_turns = {}
     while True:
@@ -140,7 +153,7 @@ def gameThread():
                 game_state["turn"] += 1
                 game_state["drawer"] = game_state["players"][game_state["turn"]%len(game_state["players"])]
                 broadcast("", game_state["drawer"] + " will be drawing.");
-                word = "bus"
+                word = "farmington"
                 send(game_state["drawer"], "", "Your word is {}!".format(word));
                 game_state["version"] += 1
 

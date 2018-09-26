@@ -28,13 +28,13 @@ game_lock = threading.Lock()
 
 TIMEOUT = 30
 
-def send(to, mfrom, message):
+def send(to, mfrom, message, kind="guess"):
     if to in player_queue:
-        player_queue[to].append({"name":mfrom, "message":message})
+        player_queue[to].append({"name":mfrom, "message":message, "kind":kind})
 
-def broadcast(name, message):
+def broadcast(name, message, kind="guess"):
     for p in game_state["players"]:
-        player_queue[p].append({"name":name, "message":message})
+        player_queue[p].append({"name":name, "message":message, "kind":kind})
 
 @cherrypy.expose
 class GuessWebApp(object):

@@ -11,3 +11,4 @@ The frontend communicates with the backend using long polling. Guesses and pictu
 ## To Do:
  - [ ] Reorganize frontend code to be more manageable - specifically, separate drawing code from game logic.  
  - [ ] Reorganize backend code to be more manageable - specifically, separate game logic from networking.  
+ - [ ] Consider [WordNet](http://www.nltk.org/howto/wordnet.html) for deciding if a guess is close.

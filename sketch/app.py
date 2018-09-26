@@ -81,12 +81,14 @@ class GuessWebApp(object):
     def PUT(self, name, guess):
         with game_lock:
             player_time[name] = 3
+            guessp = guess
+            guess = guess.lower()
             if isGuessCorrect(guess):
                 broadcast("", "{} got it!".format(name))
             elif isGuessClose(guess):
-                send(name, "", "\"{}\" is close!".format(guess))
+                send(name, "", "\"{}\" is close!".format(guessp))
             else:
-                broadcast(name, guess)
+                broadcast(name, guessp)
             game_state["version"] += 1
             return "ok"
 
@@ -153,7 +155,8 @@ def gameThread():
                 game_state["turn"] += 1
                 game_state["drawer"] = game_state["players"][game_state["turn"]%len(game_state["players"])]
                 broadcast("", game_state["drawer"] + " will be drawing.");
-                word = "farmington"
+                with open('words') as f:
+                    word = random.choice(f.read().splitlines()).lower()
                 send(game_state["drawer"], "", "Your word is {}!".format(word));
                 game_state["version"] += 1
 

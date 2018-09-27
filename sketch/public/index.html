@@ -1,6 +1,6 @@
 <head>
 <title>It's a Bus</title>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="static/js/jquery.js"></script>
 <script src="static/js/drawing.js"></script>
 <script src="static/js/billiards.js"></script>
 <link rel="stylesheet" href="static/style/style.css">
@@ -13,23 +13,15 @@
     <h1>Billiards</h1>
     <h2>A Drawing Game</h2>
     <div id="drawing"> <canvas id="canvas"></canvas> </div>
-    <div id="answers"> 
-        <b>McFly:</b> cloud<br>
-        <b>Reeee:</b> Billiards!<br>
-        <b>JohnBot:</b> It's a bus<br>
-        <span class="warn">"bus" is close!</span><br>
-    </div>
-    <div id="controls">
-    <br>
+    <div id="answers"> </div>
+    <div id="controls"> <br>
     <input type="color" id="colorpicker">
     <input type="range" id="size" value="5" min="1" max="50">
-    <button onclick="erase();">Eraser</button>
-    <button onclick="pencil();">Pencil</button>
-    <button onclick="undo();">Undo</button>
+    <button id="erase">Eraser</button>
+    <button id="pencil">Pencil</button>
+    <button id="undo">Undo</button>
     <br>
     </div>
-    <div id="dummy">
-        Guess: <input type="text" name="FirstName" id="guess" value="">
-    </div>
+    <div id="dummy"> Guess: <input type="text" name="FirstName" id="guess" value=""> </div>
     </div>
 </body>

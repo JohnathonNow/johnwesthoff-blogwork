@@ -65,18 +65,6 @@ function onload_drawing() {
             redraw();
         }
     }
-    $('#canvas').on('touchstart mousedown', touch);
-    $('#canvas').on('touchmove mousemove', untouch);
-    $('#canvas').on('touchend mouseleave mouseup', function(e) {
-        paint = false;
-    } );
-    $('#colorpicker').on('change', function(e) { 
-        mode = DRAW_MODE;
-        color = e.target.value;
-    });
-    $('#size').on('change', function(e) { 
-        size = e.target.value;
-    });
 
     function pencil()
     {
@@ -130,4 +118,20 @@ function onload_drawing() {
             context.stroke();
         }
     }
+
+    $('#canvas').on('touchstart mousedown', touch);
+    $('#canvas').on('touchmove mousemove', untouch);
+    $('#canvas').on('touchend mouseleave mouseup', function(e) {
+        paint = false;
+    } );
+    $('#colorpicker').on('change', function(e) { 
+        mode = DRAW_MODE;
+        color = e.target.value;
+    });
+    $('#size').on('change', function(e) { 
+        size = e.target.value;
+    });
+    $('#undo').on('click', undo);
+    $('#pencil').on('click', pencil);
+    $('#erase').on('click', erase);
 }

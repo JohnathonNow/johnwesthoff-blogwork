@@ -8,6 +8,7 @@ import time
 import Levenshtein
 from datetime import datetime
 from collections import defaultdict
+from cherrypy import tools
 
 import cherrypy
 
@@ -42,10 +43,11 @@ class GuessWebApp(object):
     def __init__(self):
         pass
 
+    @cherrypy.tools.json_out()
     def GET(self,version=0,name=''):
         ct = datetime.now() #get the start time, for long polling
         if name not in player_queue:
-            return json.dumps({'status': 'failure', 'reason': 'invalid name'})
+            return {'status': 'failure', 'reason': 'invalid name'}
         response = {'status': 'success', 'payload': game_state}
         try:
             game_lock.acquire()
@@ -60,26 +62,35 @@ class GuessWebApp(object):
                     response['reason'] = 'timeout'
                     break
             response["messages"] = player_queue[name]
-            return json.dumps(response) #send over the data
+            return response #send over the data
         except Exception as E:
             #file an error report
             response['status'] = 'failure'
             response['reason'] = str(E)
-            return json.dumps(response)
+            return response
         finally: #whenever we leave, no matter what we must release the lock
+            player_time[name] = 3
             player_queue[name] = []
             game_lock.release()
 
+    @cherrypy.tools.json_out()
     def POST(self, name):
         with game_lock:
-            player_time[name] = 3
             if name not in game_state["players"]:
                 game_state["players"].append(name)
+            else:
+            #elif 'name' not in cherrypy.session or cherrypy.session['name'] != name:
+                return {'status': 'failure', 'reason': 'name taken'}
+            player_time[name] = 3
+            #cherrypy.session['name'] = name
             game_state["version"] += 1
             broadcast("", name + " has joined.")
+            return {'status': 'success'}
 
     def PUT(self, name, guess):
         with game_lock:
+            if name not in game_state["players"]:
+                return {'status': 'failure', 'reason': 'invalid name'}
             player_time[name] = 3
             guessp = guess
             guess = guess.lower()
@@ -90,7 +101,7 @@ class GuessWebApp(object):
             else:
                 broadcast(name, guessp)
             game_state["version"] += 1
-            return "ok"
+            return {'status': 'success'}
 
     def DELETE(self):
         return "ok"
@@ -101,6 +112,7 @@ class SketchWebApp(object):
     def __init__(self):
         pass
 
+    @cherrypy.tools.json_out()
     def GET(self, version=0):
         ct = datetime.now() #get the start time, for long polling
         response = {'status': 'success', 'payload': draw_state}
@@ -116,12 +128,12 @@ class SketchWebApp(object):
                     response['status'] = 'failure'
                     response['reason'] = 'timeout'
                     break
-            return json.dumps(response) #send over the data
+            return response #send over the data
         except Exception as E:
             #file an error report
             response['status'] = 'failure'
             response['reason'] = str(E)
-            return json.dumps(response)
+            return response
         finally: #whenever we leave, no matter what we must release the lock
             draw_lock.release()
 
@@ -167,10 +179,10 @@ def gameThread():
                         toRemove.append(p)
 
                 for p in toRemove:
+                    broadcast("", p + " has left.");
+                    game_state["players"].remove(p)
                     player_queue.pop(p, None)
                     player_time.pop(p, None)
-                    game_state["players"].remove(p)
-                    broadcast("", p + " has left.");
             turn_time -= 1
         time.sleep(1)
 
@@ -178,17 +190,20 @@ def gameThread():
 if __name__ == '__main__':
     conf = {
         '/': {
-            'tools.sessions.on': True,
+            #'tools.sessions.on': True,
             'tools.staticdir.root': os.path.abspath(os.getcwd()),
             'tools.staticdir.dir': './public',
         },
         '/guess': {
+            #'tools.sessions.on': True,
             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         },
         '/rest': {
+            #'tools.sessions.on': True,
             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         },
         '/static': {
+            #'tools.sessions.on': True,
             'tools.staticdir.on': True,
             'tools.staticdir.dir': './public/',
         }

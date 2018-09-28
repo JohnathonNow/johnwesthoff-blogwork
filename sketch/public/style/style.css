@@ -1,3 +1,7 @@
+html, body {
+    overscroll-behavior-y: contain;
+}
+
 .warn {
     width: 100%;
     background-color: #ff6b6b;
@@ -5,36 +9,50 @@
 }
 
 #guess {
-    width: 90%;
+    flex: 90%;
 }
 
-#drawing {
-    display: inline-block;
-    width:45%;
-    text-align: right;
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#gamecontainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#drawingcontainer {
+    flex: 45%;
+}
+
+.full {
+    flex: 100%;
+}
+
+#answerscontainer {
+    flex: 45%;
 }
 
 #dummy {
-    display: inline-block;
-    width:45%;
+    display: flex;
 }
 
 #controls {
-    display: inline-block;
-    width:45%;
-    text-align: right;
+}
+
+#login {
 }
 
 #answers {
-    display: inline-block;
-    width:45%;
     text-align: left;
     overflow-y:auto;
-    height: 420px;
+    height: 50%;
+    max-height:50%;
 }
 
-#canvas {
-    width: 420px;
+.image {
+    width: 75%;
     height: 420px;
     border-style: ridge;
     border-width: 5px;

@@ -98,6 +98,7 @@ class GuessWebApp(object):
                 broadcast("", "{} got it!".format(name))
             elif isGuessClose(guess):
                 send(name, "", "\"{}\" is close!".format(guessp))
+                send(game_state["drawer"], name, guessp)
             else:
                 broadcast(name, guessp)
             game_state["version"] += 1
@@ -162,14 +163,20 @@ def gameThread():
     player_turns = {}
     while True:
         with game_lock:
-            if turn_time <= 0 and len(game_state["players"]) > 1:
-                turn_time = 60
+            if len(game_state["players"]) == 0:
+                turn_time = 0
+            elif turn_time <= 0 and len(game_state["players"]) > 1:
+                with draw_lock:
+                    #transparent image
+                    draw_state['image'] = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                    draw_state['version'] += 1
+                turn_time = 120
                 game_state["turn"] += 1
                 game_state["drawer"] = game_state["players"][game_state["turn"]%len(game_state["players"])]
                 broadcast("", game_state["drawer"] + " will be drawing.");
                 with open('words') as f:
                     word = random.choice(f.read().splitlines()).lower()
-                send(game_state["drawer"], "", "Your word is {}!".format(word));
+                send(game_state["drawer"], "", "Your word is {}!".format(word), "word");
                 game_state["version"] += 1
 
                 toRemove = []
@@ -188,6 +195,11 @@ def gameThread():
 
 
 if __name__ == '__main__':
+
+    cherrypy.server.socket_host = '0.0.0.0'
+    cherrypy.server.socket_port = 80
+    cherrypy.server.shutdown_timeout = 1
+
     conf = {
         '/': {
             #'tools.sessions.on': True,

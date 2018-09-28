@@ -13,10 +13,7 @@ function onload_billiards() {
                 if (response['status'] === 'success') {
                     gImageV = response['payload']['version'];
                     if (gDrawer !== gName) {
-                        var newImg = document.createElement("img");
-                        newImg.setAttribute('src', response['payload']['image']);
-                        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-                        context.drawImage(newImg,0,0,420,420);
+                        $("#picture").attr("src",response['payload']['image']);
                     }
                     setTimeout(getDrawing, 10);
                 } else {
@@ -25,6 +22,7 @@ function onload_billiards() {
                 }
             },
             error: function (e) {
+                console.log(e);
                 setTimeout(getDrawing, 1000);
             }
         });
@@ -38,6 +36,9 @@ function onload_billiards() {
                 var messages = response['messages'];
                 var msges = '';
                 for (var i = 0; i < messages.length; i++) {
+                    if (messages[i].kind === "word") {
+                        clear_canvas();
+                    }
                     if (messages[i].name === "") {
                         msges += '<b class="warn">' + messages[i].message + '</b><br>'
                     } else {
@@ -47,6 +48,15 @@ function onload_billiards() {
                 $('#answers').html($('#answers').html() + msges);
                 gGuessV = response['payload']["version"]; 
                 gDrawer = response['payload']["drawer"]; 
+                if (gDrawer === gName) {
+                    $('#picture').hide();
+                    $('#canvas').show();
+                } else {
+                    $('#picture').show();
+                    $('#canvas').hide();
+                }
+                $("#answers").stop();
+                $("#answers").animate({scrollTop:$("#answers")[0].scrollHeight}, 500);
                 setTimeout(getGuesses, 10);
             },
             error: function (e) {
@@ -63,9 +73,12 @@ function onload_billiards() {
             success: function (response) {
                 getGuesses();
                 getDrawing();
+                $('#game').show();
+                $('#login').hide();
+                on_visible();
             },
             error: function (e) {
-                register(); //try again
+                setTimeout(register, 1000);
             }
         });
     }
@@ -78,7 +91,7 @@ function onload_billiards() {
             success: function (d) {
             },
             error: function (e) {
-                sendGuess(g); //try again
+                setTimeout(function() {sendGuess(g);}, 1000);
             }
         });
     }
@@ -86,7 +99,6 @@ function onload_billiards() {
     function sendDrawing() {
         if (gDrawer === gName) {
             var dataURL = canvas.toDataURL();
-            console.log(dataURL);
             $.ajax({
                 url: "/rest",
                 type: "PUT",
@@ -109,8 +121,6 @@ function onload_billiards() {
         if(e.keyCode == 13) {
             gName = $('#name').val();
             register();
-            $('#game').show();
-            $('#login').hide();
         }
     });
     $("#guess").on("keydown", function search(e) {

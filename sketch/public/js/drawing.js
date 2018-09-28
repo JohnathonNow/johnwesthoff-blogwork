@@ -1,8 +1,21 @@
 var canvas;
 var context;
+var strokes = new Array();
+
+function clear_canvas() {
+    strokes.length = 0;
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+}
+
+function on_visible() {
+    $('.image').height($('#canvas').width());
+    $('#answers').css("max-height", $('#answers').height()+"px");
+    canvas.setAttribute('width', $('#canvas').width());
+    canvas.setAttribute('height', $('#canvas').height());
+    $('#picture').hide();
+}
 
 function onload_drawing() {
-    var strokes = new Array();
     var DRAW_MODE;
     var paint;
     var color = "#000000";
@@ -11,8 +24,6 @@ function onload_drawing() {
     var TRACEBACK = 0;
 
     canvas = document.getElementById('canvas');
-    canvas.setAttribute('width', 420);
-    canvas.setAttribute('height', 420);
     context = canvas.getContext("2d");
     DRAW_MODE = context.globalCompositeOperation;
     mode = DRAW_MODE;
@@ -122,6 +133,7 @@ function onload_drawing() {
     $('#canvas').on('touchstart mousedown', touch);
     $('#canvas').on('touchmove mousemove', untouch);
     $('#canvas').on('touchend mouseleave mouseup', function(e) {
+        redraw();
         paint = false;
     } );
     $('#colorpicker').on('change', function(e) { 

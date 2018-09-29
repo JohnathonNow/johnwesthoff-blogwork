@@ -5,6 +5,16 @@ function onload_billiards() {
     var gImageV = 0;
     var gGuessV = 0;
 
+
+    function tick(t) {
+        $("#timer").animate({ val: t }, {
+        duration: 200,
+        easing: 'linear',
+        step: function(val) {
+            $("#timer").val(val);
+        }});
+    }
+
     function getDrawing() {
         $.ajax({
             url: "/rest/"+gImageV,
@@ -33,6 +43,7 @@ function onload_billiards() {
             url: "/guess/"+gGuessV+"/"+gName,
             type: "GET",
             success: function (response) {
+                tick(response['payload']['time']);
                 var messages = response['messages'];
                 var msges = '';
                 for (var i = 0; i < messages.length; i++) {
@@ -129,4 +140,5 @@ function onload_billiards() {
             $('#guess').val('');
         }
     });
+    setInterval(function () {tick($("#timer").val()-1);}, 1000);
 }

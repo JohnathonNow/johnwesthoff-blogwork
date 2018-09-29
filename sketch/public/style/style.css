@@ -1,5 +1,10 @@
 html, body {
     overscroll-behavior-y: contain;
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
 }
 
 .warn {
@@ -28,6 +33,10 @@ html, body {
 
 .full {
     flex: 100%;
+}
+
+#timer {
+    width: 100%;
 }
 
 #answerscontainer {

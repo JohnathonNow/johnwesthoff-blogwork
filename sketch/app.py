@@ -19,7 +19,7 @@ class Sketch(object):
 
 draw_state = {"image": "", "version": 0}
 draw_lock = threading.Lock()
-game_state = {"turn": 0, "players": [], "version": 0, "drawer": "", "players": []}
+game_state = {"turn": 0, "players": [], "version": 0, "drawer": "", "scores": {}, "time": 0, "correct": []}
 player_time = {}
 player_queue = defaultdict(list)
 
@@ -78,6 +78,7 @@ class GuessWebApp(object):
         with game_lock:
             if name not in game_state["players"]:
                 game_state["players"].append(name)
+                game_state["scores"][name] = 0
             else:
             #elif 'name' not in cherrypy.session or cherrypy.session['name'] != name:
                 return {'status': 'failure', 'reason': 'name taken'}
@@ -95,7 +96,16 @@ class GuessWebApp(object):
             guessp = guess
             guess = guess.lower()
             if isGuessCorrect(guess):
-                broadcast("", "{} got it!".format(name))
+                if name in game_state["correct"]:
+                    send(name, "", "You already got it.")
+                elif name == game_state["drawer"]:
+                    send(name, "", "You can't guess your own word.")
+                else:
+                    score_boost = max(1, 10-len(game_state["correct"]))
+                    game_state["scores"][name] += score_boost
+                    game_state["scores"][game_state["drawer"]] += score_boost
+                    game_state["correct"].append(name)
+                    broadcast("", "{} got it!".format(name))
             elif isGuessClose(guess):
                 send(name, "", "\"{}\" is close!".format(guessp))
                 send(game_state["drawer"], name, guessp)
@@ -159,18 +169,35 @@ def isGuessClose(guess):
 
 def gameThread():
     global word
-    turn_time = 0
     player_turns = {}
     while True:
         with game_lock:
             if len(game_state["players"]) == 0:
-                turn_time = 0
-            elif turn_time <= 0 and len(game_state["players"]) > 1:
+                game_state["turn"] = 0
+                game_state["time"] = 0
+            elif (game_state["time"] <= 0 or (len(game_state["players"]) == 1+len(game_state["correct"]))) and len(game_state["players"]) > 1:
+                if game_state["turn"] > 0:
+                    if len(game_state["correct"]) > 2:
+                        broadcast("", "{}, and {} correctly guessed {}'s word {}".format(", ".join(game_state["correct"][:-2]),
+                                                                                                   game_state["correct"][-1],
+                                                                                                   game_state["drawer"],
+                                                                                                   word))
+                    elif len(game_state["correct"]) == 2:
+                        broadcast("", "{} correctly guessed {}'s word {}".format(" and ".join(game_state["correct"]),
+                                                                                           game_state["drawer"],
+                                                                                           word))
+                    elif len(game_state["correct"]) == 1:
+                        broadcast("", "{} correctly guessed {}'s word {}".format(game_state["correct"][0],
+                                                                                 game_state["drawer"],
+                                                                                 word))
+                    else:
+                        broadcast("", "Nobody correctly guessed {}'s word {}".format(game_state["drawer"], word))
                 with draw_lock:
                     #transparent image
                     draw_state['image'] = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                     draw_state['version'] += 1
-                turn_time = 120
+                game_state["correct"] = []
+                game_state["time"] = 120
                 game_state["turn"] += 1
                 game_state["drawer"] = game_state["players"][game_state["turn"]%len(game_state["players"])]
                 broadcast("", game_state["drawer"] + " will be drawing.");
@@ -190,7 +217,7 @@ def gameThread():
                     game_state["players"].remove(p)
                     player_queue.pop(p, None)
                     player_time.pop(p, None)
-            turn_time -= 1
+            game_state["time"] -= 1
         time.sleep(1)
 
 

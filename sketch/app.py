@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import os, os.path
 import random
 import json
@@ -178,20 +178,21 @@ def gameThread():
             elif (game_state["time"] <= 0 or (len(game_state["players"]) == 1+len(game_state["correct"]))) and len(game_state["players"]) > 1:
                 if game_state["turn"] > 0:
                     if len(game_state["correct"]) > 2:
-                        broadcast("", "{}, and {} correctly guessed {}'s word {}".format(", ".join(game_state["correct"][:-2]),
+                        broadcast("", "{}, and {} correctly guessed {}'s word \"{}\"".format(", ".join(game_state["correct"][:-2]),
                                                                                                    game_state["correct"][-1],
                                                                                                    game_state["drawer"],
                                                                                                    word))
                     elif len(game_state["correct"]) == 2:
-                        broadcast("", "{} correctly guessed {}'s word {}".format(" and ".join(game_state["correct"]),
+                        broadcast("", "{} correctly guessed {}'s word \"{}\"".format(" and ".join(game_state["correct"]),
                                                                                            game_state["drawer"],
                                                                                            word))
                     elif len(game_state["correct"]) == 1:
-                        broadcast("", "{} correctly guessed {}'s word {}".format(game_state["correct"][0],
+                        broadcast("", "{} correctly guessed {}'s word \"{}\"".format(game_state["correct"][0],
                                                                                  game_state["drawer"],
                                                                                  word))
                     else:
-                        broadcast("", "Nobody correctly guessed {}'s word {}".format(game_state["drawer"], word))
+                        broadcast("", "Nobody correctly guessed {}'s word \"{}\"".format(game_state["drawer"], word))
+                broadcast("", "<br>".join(["{}: {}".format(k, game_state["scores"][k]) for k in game_state["players"]]))
                 with draw_lock:
                     #transparent image
                     draw_state['image'] = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"

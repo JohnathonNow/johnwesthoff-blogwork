@@ -18,16 +18,16 @@ class Sketch(object):
         return open('public/index.html')
 
 draw_state = {"image": "", "version": 0}
-draw_lock = threading.Lock()
 game_state = {"turn": 0, "players": [], "version": 0, "drawer": "", "scores": {}, "time": 0, "correct": []}
 player_time = {}
 player_queue = defaultdict(list)
 
 word = ""
 
+draw_lock = threading.Lock()
 game_lock = threading.Lock()
 
-TIMEOUT = 30
+TIMEOUT = 10
 
 def send(to, mfrom, message, kind="guess"):
     if to in player_queue:
@@ -53,7 +53,7 @@ class GuessWebApp(object):
             game_lock.acquire()
             while int(version) >= int(game_state['version']): #wait for new data
                 game_lock.release()
-                time.sleep(0.1) #let someone else try to do something
+                time.sleep(0.5) #let someone else try to do something
                 game_lock.acquire()
                 lt = datetime.now()
                 #if we wait too long, let our client just start a new request
@@ -62,6 +62,7 @@ class GuessWebApp(object):
                     response['reason'] = 'timeout'
                     break
             response["messages"] = player_queue[name]
+            response["payload"] = game_state
             return response #send over the data
         except Exception as E:
             #file an error report
@@ -69,7 +70,7 @@ class GuessWebApp(object):
             response['reason'] = str(E)
             return response
         finally: #whenever we leave, no matter what we must release the lock
-            player_time[name] = 3
+            player_time[name] = 2
             player_queue[name] = []
             game_lock.release()
 
@@ -89,10 +90,11 @@ class GuessWebApp(object):
             return {'status': 'success'}
 
     def PUT(self, name, guess):
+        print("{}: {}".format(name, guess))
         with game_lock:
             if name not in game_state["players"]:
                 return {'status': 'failure', 'reason': 'invalid name'}
-            player_time[name] = 3
+            player_time[name] = 2
             guessp = guess
             guess = guess.lower()
             if isGuessCorrect(guess):
@@ -166,7 +168,6 @@ def isGuessCorrect(guess):
 def isGuessClose(guess):
     return (guess in word and len(guess) > 3) or Levenshtein.distance(str(guess), str(word)) <= 3
 
-
 def gameThread():
     global word
     player_turns = {}
@@ -216,6 +217,7 @@ def gameThread():
                 for p in toRemove:
                     broadcast("", p + " has left.");
                     game_state["players"].remove(p)
+                    game_state["scores"].pop(p, None)
                     player_queue.pop(p, None)
                     player_time.pop(p, None)
             game_state["time"] -= 1

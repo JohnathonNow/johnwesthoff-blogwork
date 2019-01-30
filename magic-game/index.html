@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Phaser Example Runner</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <script src="https://johnwesthoff.com/js/phaser/build/phaser.min.js" type="text/javascript"></script>
+        <style>
+body, div {
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+}
+        </style>
+    </head>
+    <body>
+        <div id="game"></div>
+
+        <script type="text/javascript">
+
+            var IDE_HOOK = false;
+var VERSION = '2.6.2';
+
+var width = window.screen.availWidth * window.devicePixelRatio;
+var height = window.screen.availHeight * window.devicePixelRatio;
+
+var game = new Phaser.Game(width, height,
+    Phaser.AUTO, 'game', { preload: preload, create: create, render: render });
+
+var players, p1, p2, bullets;
+
+function preload() {
+    var wizardimg = game.load.image('wizard', 'wizard.png');
+
+}
+
+function create() {
+
+    game.stage.backgroundColor = '#454605';
+
+    //  By default Phaser only starts 2 pointers (enough for 2 fingers at once)
+
+    //  addPointer tells Phaser to add another pointer to Input, so here we are basically saying "allow up to 6 pointers + the mouse"
+
+    //  Note: on iOS as soon as you use 6 fingers you'll active the minimise app gesture - and there's nothing we can do to stop that, sorry
+
+    game.input.addPointer();
+    game.input.addPointer();
+    game.input.addPointer();
+    game.input.addPointer();
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
+    game.input.onUp.add(fs, this);
+    game.input.onDown.add(touch, this);
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.scale.forceOrientation(false, true);
+
+    //  The platforms group contains the ground and the 2 ledges we can jump on
+    players = game.add.group();
+
+    //  We will enable physics for any object that is created in this group
+    players.enableBody = true;
+
+    // Here we create the ground.
+    p1 = players.create(0, game.world.height - 64, 'wizard');
+    p1.anchor.setTo(0.5, 0.5);
+    p2 = players.create(game.world.width-32, game.world.height - 64, 'wizard');
+    p2.anchor.setTo(0.5, 0.5);
+    game.physics.enable(p1, Phaser.Physics.ARCADE);
+
+    bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
+    bullets.createMultiple(50, 'bullet');
+    bullets.setAll('checkWorldBounds', true);
+    bullets.setAll('body.collideWorldBounds', true);
+    bullets.setAll('body.immovable', true);
+    bullets.setAll('body.bounce', new Phaser.Point(1,1));
+
+
+}
+
+function render() {
+
+}
+
+function fs(pointer) {
+    game.scale.startFullScreen(false);
+}
+
+function getOrientation() {
+    return game.world.width > game.world.height;
+}
+
+function isP1Half(pointer) {
+    if (getOrientation()) {
+        return (pointer.x<game.world.width/2);
+    } else {
+        return (pointer.y<game.world.height/2);
+    }
+}
+
+function isGutter(pointer) {
+    if (getOrientation()) {
+        return (pointer.x<game.world.width/10 || pointer.x>game.world.width*9/10);
+    } else {
+        return (pointer.y<game.world.height/10 || pointer.y>game.world.height*9/10);
+    }
+}
+
+function touch(pointer) {
+
+    var p = p1;
+    if (isP1Half(pointer)) {
+        p = p2;
+    }
+    if (isGutter(pointer)) {
+        p.spell = true;
+        p.tint = 0xFF0000;
+    } else {
+        if (p.spell) {
+            var bullet = bullets.getFirstDead();
+            bullet.reset(p.x - 8, p.y - 8);
+            game.physics.arcade.moveToPointer(bullet, 900, pointer);
+            p.spell = false;
+            p.tint = 0xFFFFFF;
+        } else {
+            var duration = (game.physics.arcade.distanceToPointer(p, pointer) / 300) * 1000;
+
+            if (p.tween) {
+                p.tween.stop();
+                game.tweens.remove(p.tween);
+                p.tween = null;
+            }
+            tween = game.add.tween(p).to({ x: pointer.x, y: pointer.y }, duration, Phaser.Easing.Linear.None, true);
+            p.tween = tween;
+
+        }
+
+    }
+
+    //tween.onComplete.add(this.moveCharacterComplete, this);
+}
+
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,36 @@
+x = 0
+stack = []
+---
+x = -48
+stack = []
+--- push
+x = -48
+stack = [-48]
+--- push
+x = -48
+stack = [-48 -48]
+--- pop
+x = 0
+stack = [-48]
+--- add 32
+x = 32
+stack = [-48]
+--- pop
+x = 16
+stack = []
+-- check here
+--- push
+x = 16
+stack = [16]
+--- push
+x = 16
+stack = [16 16]
+--- pop
+x = 0
+stack = [16]
+--- add 4
+x = 4
+stack = [16]
+--- pop
+x = -12
+stack = []

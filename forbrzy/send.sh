@@ -1,4 +1,4 @@
-rcp='2158400194@vtext.com'
+rcp='2158400194@vzwpics.com'
 url=`python2 go.py`
 file=`basename "$url"`
 curl "$url" > $file

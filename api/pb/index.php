@@ -1,4 +1,5 @@
 <?php
+    header("Access-Control-Allow-Origin: *");
     require 'vendor/autoload.php';
     $collection = (new MongoDB\Client)->pb->pastebin;
     $method = $_SERVER['REQUEST_METHOD'];

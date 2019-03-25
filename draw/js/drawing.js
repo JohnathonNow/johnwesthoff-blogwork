@@ -126,7 +126,7 @@ function redraw(){
 function send() {
 	var dataURL = canvas.toDataURL();
     $.ajax({
-        url: "http://johnwesthoff.com:31111",
+        url: "https://johnwesthoff.com/api/lovenotes",
         type: "POST",
 		data: {"image": dataURL},
         success: function (d) {

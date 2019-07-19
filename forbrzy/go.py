@@ -12,8 +12,8 @@ def get(sub):
     for i in range(0, 10):
         try:
             data = data[0]['data']
-            print(URL_BASE + data['permalink'])
             print(data['url'])
+            print(URL_BASE + data['permalink'])
             break
         except:
             pass

@@ -1,6 +1,6 @@
 import requests
-
-URL_FORM = 'https://www.reddit.com/r/{}/top.json?t=day'
+URL_BASE = 'https://www.reddit.com'
+URL_FORM = URL_BASE + '/r/{}/top.json?t=day'
 SUBS = ['rarepuppers']
 
 
@@ -11,7 +11,9 @@ def get(sub):
     data = r.json()['data']['children']
     for i in range(0, 10):
         try:
-            print(data[0]['data']['url'])
+            data = data[0]['data']
+            print(URL_BASE + data['permalink'])
+            print(data['url'])
             break
         except:
             pass

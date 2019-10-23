@@ -1,3 +1,2 @@
 # Notre
-Notre is a game similar to Pictionary. Given a word, the user must draw the
-word.
+Notre is a Markdown dialect that compiles to HTML.

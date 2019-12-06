@@ -1,6 +1,5 @@
-import deck
-import board
+#!/usr/bin/env python3
+from codegames import game
 
-d = deck.Deck('words')
-b = board.Board(d)
-print(b)
+g = game.Game('words')
+print(g)

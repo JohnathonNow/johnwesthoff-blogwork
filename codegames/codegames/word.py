@@ -3,4 +3,4 @@ class Word:
         self.word = word.strip().lower()
 
     def __str__(self):
-        return 'Word: {}'.format(self.word)
+        return '<Word: {}>'.format(self.word)

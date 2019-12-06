@@ -1,4 +1,4 @@
-import word
+from . import word
 import random
 
 class Deck:

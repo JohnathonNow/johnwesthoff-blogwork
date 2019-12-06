@@ -4,4 +4,4 @@ class Tile:
         self.alignment = alignment
 
     def __str__(self):
-        return 'Tile: Holding {} as {}'.format(str(self.word), self.alignment)
+        return '<Tile: Holding {} as {}>'.format(str(self.word), self.alignment)

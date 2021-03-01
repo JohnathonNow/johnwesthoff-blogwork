@@ -8,21 +8,16 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        async fn inner(ctx: &Context, msg: &Message) -> Result<(), Box<dyn Error>> {
-            if msg.content.starts_with("??") {
-                let v = vec!["⏫", "🔼", "⏸", "🔽", "⏬"];
-                for emoji in v {
-                    msg.react(&ctx.http, ReactionType::Unicode(emoji.to_string())).await?;
-                }
-            } else if msg.content.starts_with("?") {
-                let v = vec!["✔", "❌"];
-                for emoji in v {
-                    msg.react(&ctx.http, ReactionType::Unicode(emoji.to_string())).await?;
-                }
+        let v = match &msg.content {
+            x if x.starts_with("??") => vec!["⏫", "🔼", "⏸", "🔽", "⏬"],
+            x if x.starts_with("?")  => vec!["✔", "❌"],
+            _ => vec![],
+        };
+        for emoji in v {
+            if let Err(e) = msg.react(&ctx.http, ReactionType::Unicode(emoji.to_string())).await {
+                println!("Error: {}", e);
             }
-            Ok(())
         }
-        inner(&ctx, &msg).await.unwrap_or(());
     }
 
     async fn ready(&self, _: Context, ready: Ready) {

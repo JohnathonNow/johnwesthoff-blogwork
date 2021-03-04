@@ -15,6 +15,7 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
+        
         let v = match &msg.content {
             x if x.starts_with("??") => vec!["⏫", "🔼", "⏸", "🔽", "⏬"],
             x if x.starts_with("?.") => vec!["✔", "❌", "🤔"],
@@ -23,12 +24,9 @@ impl EventHandler for Handler {
             _ => vec![],
         };
         for emoji in v {
-            if let Err(e) = msg
-                .react(&ctx.http, ReactionType::Unicode(emoji.to_string()))
+            msg.react(&ctx.http, ReactionType::Unicode(emoji.to_string()))
                 .await
-            {
-                println!("Error: {}", e);
-            }
+                .ok();
         }
     }
 

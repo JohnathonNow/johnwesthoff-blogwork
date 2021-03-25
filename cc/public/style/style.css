@@ -1,0 +1,79 @@
+html, body {
+    overscroll-behavior-y: contain;
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+}
+
+.image {
+    width: 50%;
+    height: auto;
+    border-style: ridge;
+    border-width: 5px;
+    border-color: gray;
+    flex: 40%;
+}
+
+.warn {
+    width: 100%;
+    background-color: #ff6b6b;
+    display: inline-block;
+}
+
+#guess {
+    flex: 90%;
+}
+
+
+.choice {
+    flex: 1;
+}
+
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#gamecontainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#drawingcontainer {
+    flex: 45%;
+}
+
+.full {
+    flex: 100%;
+}
+
+#timer {
+    width: 100%;
+}
+
+#answerscontainer {
+    flex: 45%;
+}
+
+#dummy {
+    display: flex;
+}
+
+#controls {
+}
+
+#login {
+}
+
+#answers {
+    text-align: left;
+    overflow-y:auto;
+    height: 50%;
+    max-height:50%;
+}
+
+
+#game {
+}

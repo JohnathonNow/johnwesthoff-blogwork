@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 import fileinput
 
+resps = {}
 competitors = {i: 1000 for i in range(0, 29)}
-K = 20
+K = 40
+
+def add(n):
+    if n in resps:
+        resps[n] += 1
+    else:
+        resps[n] = 1
 
 for l in fileinput.input():
     name, a, b, r = l.split(',')
+    add(name)
     a = int(a.strip())
     b = int(b.strip())
     r = int(r.strip())
@@ -28,8 +36,12 @@ for l in fileinput.input():
     competitors[b] = rb + K*(sb - eb)
 
 print(competitors)
+print(resps)
+
 print(min(competitors, key=competitors.get))
 print(max(competitors, key=competitors.get))
 
+
 for c in competitors:
     print(competitors[c])
+

@@ -74,7 +74,6 @@ impl EventHandler for Handler {
                 }
             }
         }
-        println!("{:?}", talkers);
     }
 
     async fn ready(&self, _: Context, ready: Ready) {

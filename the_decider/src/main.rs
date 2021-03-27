@@ -2,10 +2,11 @@ use chrono::prelude::*;
 use rand::prelude::SliceRandom;
 use serenity::{
     async_trait,
+    futures::StreamExt,
     model::{
         channel::{Message, ReactionType},
         gateway::Ready,
-        id::{RoleId, UserId},
+        id::{GuildId, RoleId, UserId},
     },
     prelude::*,
 };
@@ -15,16 +16,36 @@ use std::{collections::HashMap, env, sync::Arc};
 const TIME_LIMIT: i64 = 120;
 const DEVIL_ROLE: u64 = 825089774251147355;
 
+struct Talker {
+    time: i64,
+    id: u64,
+}
+
 struct Handler {
-    talkers: Arc<Mutex<HashMap<String, (i64, u64)>>>,
-    devil: Arc<Mutex<u64>>,
+    talkers: Arc<Mutex<HashMap<String, Talker>>>,
 }
 
 impl Handler {
     fn new() -> Self {
         Self {
             talkers: Arc::new(Mutex::new(HashMap::new())),
-            devil: Arc::new(Mutex::new(0)),
+        }
+    }
+    async fn remove_role(&self, g: &GuildId, h: &Context) {
+        let mut mems = g.members_iter(h).boxed();
+        while let Some(mr) = mems.next().await {
+            if let Ok(mut m) = mr {
+                m.remove_role(h, RoleId(DEVIL_ROLE)).await.unwrap_or(());
+            }
+        }
+    }
+
+    async fn make_devil(&self, g: &GuildId, h: &Context, candidates: &Vec<u64>) {
+        let devil = *candidates.choose(&mut rand::thread_rng()).unwrap_or(&0);
+        if let Ok(mut y) = g.member(h, UserId(devil)).await {
+            if let Err(z) = y.add_role(h, RoleId(DEVIL_ROLE)).await {
+                println!("big sad with {:?}", z);
+            }
         }
     }
 }
@@ -35,7 +56,10 @@ impl EventHandler for Handler {
         let mut talkers = self.talkers.lock().await;
         talkers.insert(
             msg.author.name.clone(),
-            (msg.timestamp.timestamp(), *msg.author.id.as_u64()),
+            Talker {
+                time: msg.timestamp.timestamp(),
+                id: *msg.author.id.as_u64(),
+            },
         );
 
         let v = match &msg.content {
@@ -52,26 +76,19 @@ impl EventHandler for Handler {
         }
         if msg.content.starts_with("!devil") {
             let now = Utc::now().timestamp();
-            let candidates = talkers
-                .iter()
-                .filter(|(_, (time, _))| now - *time <= TIME_LIMIT)
-                .collect::<Vec<(&String, &(i64, u64))>>();
-            if let Some(x) = msg.guild_id {
-                let mut userid = self.devil.lock().await;
-                if let Ok(mut y) = x.member(&ctx, UserId(*userid)).await {
-                    y.remove_role(&ctx, RoleId(DEVIL_ROLE))
-                        .await
-                        .unwrap_or(());
-                }
-                let devil = candidates
-                    .choose(&mut rand::thread_rng())
-                    .unwrap_or(&(&"".to_string(), &(0, *msg.author.id.as_u64()))).1.1;
-                if let Ok(mut y) = x.member(&ctx, UserId(devil)).await {
-                    y.add_role(&ctx, RoleId(DEVIL_ROLE))
-                        .await
-                        .unwrap_or(());
-                    *userid = *msg.author.id.as_u64();
-                }
+
+            if let Some(g) = msg.guild_id {
+                self.remove_role(&g, &ctx).await;
+                let candidates = talkers
+                    .iter()
+                    .filter(|(_, x)| now - x.time <= TIME_LIMIT)
+                    .map(|(_, y)| y.id)
+                    .collect::<Vec<u64>>();
+                self.make_devil(&g, &ctx, &candidates).await;
+            }
+        } else if msg.content.starts_with("!nodevil") {
+            if let Some(g) = msg.guild_id {
+                self.remove_role(&g, &ctx).await;
             }
         }
     }

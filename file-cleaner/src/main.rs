@@ -1,7 +1,7 @@
 use std::{cmp::{max, min}, collections::HashMap, error::Error, fs};
 use walkdir::{DirEntry, WalkDir};
 
-const THRESHOLD: i32 = 50;
+const THRESHOLD: i32 = 70;
 
 type Tracker = HashMap<String, i32>;
 
@@ -44,7 +44,7 @@ fn handle_file(entry: &DirEntry, others: &[DirEntry]) {
         let other_trigrams = find_trigrams(&other_entry);
         let other_fname = other_entry.file_name().to_string_lossy();
         if is_similar(&my_trigrams, &&other_trigrams) {
-            println!("rm {} {}", my_fname, other_fname);
+            println!("rm \"{}\" # same as {}", other_fname, my_fname);
         }
     }
 }

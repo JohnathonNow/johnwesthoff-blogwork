@@ -1,5 +1,5 @@
 [package]
-name = "foo-parser"
+name = "file-cleaner"
 version = "0.1.0"
 authors = ["John Westhoff <johnwesthoff@nyu.edu>"]
 edition = "2018"

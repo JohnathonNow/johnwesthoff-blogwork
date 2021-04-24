@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use actix_web::{get, http::StatusCode, web, App, HttpResponse, HttpServer, ResponseError};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use actix_files::Files;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Post {
@@ -68,19 +69,20 @@ async fn index(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     if let Ok(conn) = Connection::open(&"./bob.db") {
-        let _ = conn.execute(
-            "CREATE TABLE posts (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS posts (
                   id              INTEGER PRIMARY KEY,
                   num             INT8,
-                  user            INT8
+                  user            TEXT
                   )",
             params![],
-        );
+        ).unwrap();
         let x = web::Data::new(Arc::new(Mutex::new(conn)));
         HttpServer::new(move || {
             App::new()
                 .service(index2)
                 .service(index)
+                .service(Files::new("/", "./static/").index_file("index.html"))
                 .app_data(x.clone())
         })
         .bind("127.0.0.1:8080")?

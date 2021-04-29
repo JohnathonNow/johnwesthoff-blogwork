@@ -1,4 +1,4 @@
-End goal: A drawing game like [../sketch](../sketch).
+End goal: A drawing game like [../sketch](../sketch), but re-written in rust.
 
 Tables:
 Games:

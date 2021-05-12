@@ -1,18 +1,21 @@
 {
-  "manifest_version": 2,
-  "name": "YT Tracker",
-  "version": "0.1",
+    "manifest_version": 2,
+    "name": "YT Tracker",
+    "version": "0.1",
 
-  "description": "Tracks your time on YouTube per video.",
+    "description": "Tracks your time on YouTube per video.",
 
-  "content_scripts": [
-    {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["plugin.js"]
+    "content_scripts": [
+        {
+            "matches": ["*://*.youtube.com/*"],
+            "js": ["plugin.js"]
+        }
+    ],
+
+    "permissions": ["storage"],
+
+    "options_ui": {
+        "page": "options.html"
     }
-  ],
-
-  "permissions": ["storage"]
-
 }
 

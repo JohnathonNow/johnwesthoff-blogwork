@@ -3,12 +3,10 @@ setInterval(function () {
     if (!document.getElementsByTagName('video')[0].paused) {
         browser.storage.local.get([url]).then(
             function (x) {
-                x = parseInt(x[url], 10);
-                if (Number.isNaN(x) || !x) {
-                    x = 0;
-                }
-                x += 1;
-                browser.storage.local.set({ [url]: x }).then();
+                var data = x[url] || {time: 0};
+                data.time += 1;
+                data.title = document.title.split(" - ")[0];
+                browser.storage.local.set({ [url]: data }).then();
             });
     }
 }, 1000);

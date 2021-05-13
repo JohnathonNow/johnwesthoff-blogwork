@@ -13,13 +13,26 @@ browser.storage.local.get().then(
         var s = "";
         var total = 0;
         var entries = Object.entries(x);
+        var channels = {};
         entries.sort(([a1, a2], [b1, b2]) => (a2.time < b2.time) ? 1 : -1)
         for (const [k, v] of entries) {
             total += v.time
             s += "<a href='" + k + "'>" + v.title + "</a> -  " + timestamp(v.time) + "<br>";
+            channels[v.channelName] = channels[v.channelName] || {time: 0, url: v.channelUrl};
+            channels[v.channelName].time += v.time;
         }
         s = "<b>Total:</b> " + timestamp(total) + "</br>" + s;
-        $('#stuff').html(s);
+        $('#videos').html(s);
+        s = "";
+        total = 0;
+        entries = Object.entries(channels);
+        entries.sort(([a1, a2], [b1, b2]) => (a2.time < b2.time) ? 1 : -1)
+        for (const [k, v] of entries) {
+            total += v.time
+            s += "<a href='https://youtube.com/" + v.url + "'>" + k + "</a> -  " + timestamp(v.time) + "<br>";
+        }
+        s = "<b>Total:</b> " + timestamp(total) + "</br>" + s;
+        $('#channels').html(s);
     },
     function (e) {
         console.log('sad');

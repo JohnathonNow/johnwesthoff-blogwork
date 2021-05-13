@@ -5,7 +5,7 @@ setInterval(function () {
             function (x) {
                 var data = x[url] || {time: 0};
                 data.time += 1;
-                data.title = document.title.split(" - ")[0];
+                data.title = document.title.slice(0, -(" - YouTube".length));
                 browser.storage.local.set({ [url]: data }).then();
             });
     }

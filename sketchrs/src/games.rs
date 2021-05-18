@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::error::Error;
-use actix_web::{get, web, HttpResponse};
+use actix_web::{get, put, web, HttpResponse};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
@@ -32,6 +32,19 @@ pub fn setup(conn: &mut Connection) -> std::io::Result<()> {
     )
     .unwrap();
     Ok(())
+}
+
+#[put("game/drawing/{game_id}/{image}")]
+pub async fn set_specific(
+    web::Path((game_id, image)): web::Path<(i64, String)>,
+    conn: web::Data<Arc<Mutex<Connection>>>,
+) -> Result<HttpResponse, Error> {
+    let l = conn.lock().unwrap();
+    let r = l.execute(
+        "UPDATE games SET image = ?1 WHERE id=?2",
+        params![image, game_id],
+    )?;
+    Ok(HttpResponse::Ok().json(r))
 }
 
 #[get("game/{game_id}/")]

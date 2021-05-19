@@ -41,7 +41,7 @@ pub async fn set_specific(
 ) -> Result<HttpResponse, Error> {
     let l = conn.lock().unwrap();
     let r = l.execute(
-        "UPDATE games SET image = ?1 WHERE id=?2",
+        "UPDATE games SET image = ?1, version = version + 1 WHERE id=?2",
         params![image, game_id],
     )?;
     Ok(HttpResponse::Ok().json(r))

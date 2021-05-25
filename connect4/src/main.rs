@@ -20,6 +20,16 @@ impl Board {
         0     
     }
 }
+fn get_move(b: &Board, piece: i8) -> usize {
+    let b = *b;
+    let mut possible_futures = [b; 7];
+    for i in 0..7 {
+        possible_futures[i].place(piece, i);
+    }
+    // search depth 1 for any wins, go with those if we can
+    // else choose two random moves, a and b, and recurse on them
+    0
+}
 fn main() {
     let mut b = Board::new();
     b.place(1, 3);

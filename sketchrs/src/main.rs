@@ -23,6 +23,8 @@ async fn main() -> std::io::Result<()> {
                 .service(games::add)
                 .service(games::all)
                 .service(games::specific)
+                .service(games::set_specific)
+                .service(players::add)
                 .service(Files::new("/", "./static/").index_file("index.html"))
                 .app_data(x.clone())
         })

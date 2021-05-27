@@ -8,6 +8,12 @@ const WEIGHT_WIN: i32 = 4;
 const WEIGHT_LOSS: i32 = 5;
 const WEIGHT_TIE: i32 = 1;
 
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern {
+    fn setTimeout(x: (), y: i32);
+}
+
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy)]
 pub struct Evaluation {
@@ -195,6 +201,8 @@ impl Board {
 #[wasm_bindgen]
 pub struct Evaluator {
     cache: HashMap<Board, Evaluation>,
+    #[cfg(target_arch = "wasm32")]
+    timer: usize
 }
 #[wasm_bindgen]
 impl Evaluator {
@@ -202,10 +210,19 @@ impl Evaluator {
     pub fn new() -> Self {
         Self {
             cache: HashMap::new(),
+            #[cfg(target_arch = "wasm32")]
+            timer: 0,
         }
     }
 
     pub fn get_move(&mut self, b: &Board, piece: i8) -> Evaluation {
+        #[cfg(target_arch = "wasm32")] {
+            self.timer += 1;
+            if self.timer > 5 {
+                setTimeout((), 0);
+                self.timer = 0;
+            }
+        }
         if let Some(r) = self.cache.get(b) {
             *r
         } else {

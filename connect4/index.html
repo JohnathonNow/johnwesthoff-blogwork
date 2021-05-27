@@ -19,19 +19,21 @@
 
       let b = new Board();
       let ev = new Evaluator();
-      var turn = 1;
-      function f() {
+      console.log(ev);
 
+      var turn = 1;
+      $("#board").html(b.string());
+      function f() {
         var x = ev.get_move(b, turn);
         console.log(x);
         b.place(turn, x.slot);
         $("#board").html(b.string());
         turn *= -1;
         if (b.is_won() == 0 && b.free_columns().length > 0) {
-          setInterval(f, 100);
+          setTimeout(f, 100);
         }
       }
-      f();
+      setTimeout(f, 100);
     }
 
     run();

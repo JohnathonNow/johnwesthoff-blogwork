@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>hello-wasm example</title>
+</head>
+
+<body>
+  <pre id="board"></pre>
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+    integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+  <script type="module">
+    import init, { Board, Evaluator, Evaluation } from "./pkg/connect4.js";
+
+    async function run() {
+      const wasm = await init().catch(console.error);
+      console.log(wasm);
+
+      let b = new Board();
+      let ev = new Evaluator();
+      var turn = 1;
+      function f() {
+
+        var x = ev.get_move(b, turn);
+        console.log(x);
+        b.place(turn, x.slot);
+        $("#board").html(b.string());
+        turn *= -1;
+        if (b.is_won() == 0 && b.free_columns().length > 0) {
+          setInterval(f, 100);
+        }
+      }
+      f();
+    }
+
+    run();
+
+  </script>
+</body>
+
+</html>

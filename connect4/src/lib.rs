@@ -2,8 +2,8 @@ use rand::prelude::*;
 use std::{cmp::min, collections::HashMap, fmt::Display};
 use wasm_bindgen::prelude::*;
 
-const MAX_FUTURES: usize = 7;
-const SCORE_THRESHOLD: i32 = 1000000;
+const MAX_FUTURES: usize = 3;
+const SCORE_THRESHOLD: i32 = 100000;
 const WEIGHT_WIN: i32 = 4;
 const WEIGHT_LOSS: i32 = 5;
 const WEIGHT_TIE: i32 = 1;
@@ -152,7 +152,7 @@ impl Board {
             if col + i < 6 && row + i < 7 && self.board[row + i][col + i] == piece {
                 down += 1;
             }
-            if col > i && row + i < 7 && self.board[row + i][col - i] == piece {
+            if col >= i && row + i < 7 && self.board[row + i][col - i] == piece {
                 up += 1;
             }
         }
@@ -236,9 +236,23 @@ impl Evaluator {
                     (*i, y)
                 })
                 .collect();
+            let possible_futures_lost: Vec<(usize, Board)> = b
+                .free_columns()
+                .iter()
+                .map(|i| {
+                    let mut y = b;
+                    y.place(-piece, *i);
+                    (*i, y)
+                })
+                .collect();
             for (i, board) in &possible_futures {
-                if board.is_won() == piece {
+                if board.is_won() == piece { //win if we can
                     return Evaluation::new(piece, *i, 1, 0, 0);
+                }
+            }
+            for (i, board) in &possible_futures_lost {
+                if board.is_won() == -piece { //prevent wins if we can
+                    return Evaluation::new(piece, *i, 0, 0, 1);
                 }
             }
             let mut rng = rand::thread_rng();

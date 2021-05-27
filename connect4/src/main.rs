@@ -1,9 +1,9 @@
-use std::{cmp::min, fmt::{Display}};
+use std::{cmp::min, collections::HashMap, fmt::{Display}};
 
 use rand::prelude::*;
 
 const MAX_FUTURES: usize = 7;
-const SCORE_THRESHOLD: i32 = 100;
+const SCORE_THRESHOLD: i32 = 1000000;
 const WEIGHT_WIN: i32 = 4;
 const WEIGHT_LOSS: i32 = 5;
 const WEIGHT_TIE: i32 = 1;
@@ -35,7 +35,7 @@ impl Evaluation {
     fn new(piece: i8, slot: usize, wins: i32, losses: i32, ties: i32) -> Self { Self { piece, slot, wins, losses, ties } }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 struct Board {
     board: [[i8; 6] ; 7],
 }
@@ -60,6 +60,11 @@ impl Display for Board {
             }
             s += "|";
         }
+        s += match self.is_won() {
+            1 => "\n X won",
+            -1 => "\n O won",
+            _ => "",
+        };
         f.write_str(s.as_str())
     }
 }
@@ -170,47 +175,61 @@ impl Board {
     }
 }
 
-fn get_move(b: &Board, piece: i8) -> Evaluation {
-    let b = *b;
-    let mut possible_futures: Vec<(usize, Board)> = b.free_columns().iter().map(|i|{
-        let mut y = b;
-        y.place(piece, *i);
-        (*i, y)
-    }).collect();
-    for (i, board) in &possible_futures {
-        if board.is_won() == piece {
-            return Evaluation::new(piece, *i, 1, 0, 0);
-        }
-    }
-    let mut rng = rand::thread_rng();
-    possible_futures.shuffle(&mut rng);
-    let mut result = Evaluation::new(piece, 0, 0, 0, 1);
-    let mut best = result;
-    let mut first = true;
-    for i in 0..min(MAX_FUTURES, possible_futures.len()) {
-        let mut e = get_move(&possible_futures[i].1, -piece).flip();
-        result.add(&e);
-        if e.score() > best.score() || first {
-            first = false;
-            best = e;
-            result.slot = possible_futures[i].0;
-        }
-        if e.score() > SCORE_THRESHOLD {
-            e.slot = possible_futures[i].0;
-            return e;
-        }
-    }
-    result
+struct Evaluator{
+    cache: HashMap<Board, Evaluation>
 }
+impl Evaluator{
+    fn new() -> Self { Self { cache: HashMap::new() } }
+
+
+    fn get_move(&mut self, b: &Board, piece: i8) -> Evaluation {
+        if let Some(r) = self.cache.get(b) {
+            *r
+        } else {
+        let b = *b;
+        let mut possible_futures: Vec<(usize, Board)> = b.free_columns().iter().map(|i|{
+            let mut y = b;
+            y.place(piece, *i);
+            (*i, y)
+        }).collect();
+        for (i, board) in &possible_futures {
+            if board.is_won() == piece {
+                return Evaluation::new(piece, *i, 1, 0, 0);
+            }
+        }
+        let mut rng = rand::thread_rng();
+        possible_futures.shuffle(&mut rng);
+        let mut result = Evaluation::new(piece, 0, 0, 0, 1);
+        let mut best = result;
+        let mut first = true;
+        for i in 0..min(MAX_FUTURES, possible_futures.len()) {
+            let mut e = self.get_move(&possible_futures[i].1, -piece).flip();
+            result.add(&e);
+            if e.score() > best.score() || first {
+                first = false;
+                best = e;
+                result.slot = possible_futures[i].0;
+            }
+            if e.score() > SCORE_THRESHOLD && SCORE_THRESHOLD != 0 {
+                e.slot = possible_futures[i].0;
+                return e;
+            }
+        }
+        self.cache.insert(b, result);
+        result
+    }
+}
+}
+
 fn main() {
     let mut b = Board::new();
+    let mut evaluator = Evaluator::new();
+    let mut turn = 1;
     while b.is_won() == 0 && b.free_columns().len() > 0 {
-        let x = get_move(&b, 1);
-        b.place(1, x.slot);
-        println!("{:?}", x);
-        let x = get_move(&b, -1);
-        b.place(-1, x.slot);
+        let x = evaluator.get_move(&b, turn);
+        b.place(turn, x.slot);
         println!("{:?}", x);
         println!("{}", b);
+        turn *= -1;
     }
 }

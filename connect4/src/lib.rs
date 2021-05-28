@@ -2,11 +2,11 @@ use rand::prelude::*;
 use std::{cmp::min, collections::HashMap, fmt::Display};
 use wasm_bindgen::prelude::*;
 
-const MAX_FUTURES: usize = 7;
-const SCORE_THRESHOLD: i32 = 10000000;
-const WEIGHT_WIN: i32 = 4;
-const WEIGHT_LOSS: i32 = 2000;
-const WEIGHT_TIE: i32 = 1;
+const MAX_FUTURES: usize = 2;
+const SCORE_THRESHOLD: i32 = 100000000;
+const WEIGHT_WIN: i32 = 10;
+const WEIGHT_LOSS: i32 = 20000;
+const WEIGHT_TIE: i32 = 0;
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]

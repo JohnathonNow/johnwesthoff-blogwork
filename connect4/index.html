@@ -4,15 +4,52 @@
 <head>
   <meta charset="utf-8">
   <title>hello-wasm example</title>
+  <style>
+    .empty {
+      background-color: #bbb;
+    }
+    .red {
+      background-color: #aa1111;
+    }
+    .blue {
+      background-color: #1111aa;
+    }
+    .circle {
+      width: 90%;
+      height: 0;
+      padding-bottom: 90%;
+      position: relative;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .cell {
+      width: 7%;
+      height: auto;
+      display: inline-block;
+    }
+    .row {
+      height: 7%;
+      width: 70%;
+    }
+    </style>
 </head>
 
 <body>
+  <div id="game"></div>
   <pre id="board"></pre>
   <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
     integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
   <script type="module">
     import init, { Board, Evaluator, Evaluation } from "./pkg/connect4.js";
-
+    for (var y = 0; y < 6; y++) {
+      var row = $("<div>").addClass("row");
+      for (var x = 0; x < 7; x++) {
+          var cell = $("<div>").addClass("cell");
+          cell.append($("<div>").addClass("circle").addClass("empty").attr("id", "cell-" + (y*7 + x)));
+          row.append(cell);
+      }
+      $("#game").append(row);
+    }
     async function run() {
       const wasm = await init().catch(console.error);
       console.log(wasm);
@@ -22,12 +59,26 @@
       console.log(ev);
 
       var turn = 1;
-      $("#board").html(b.string());
+      //$("#board").html(b.string());
       function f() {
         var x = ev.get_move(b, turn);
         console.log(x);
         b.place(turn, x.slot);
-        $("#board").html(b.string());
+        var d = b.raw();
+        for (var i = 0; i < d.length; i++) {
+          console.log("" + i + " , " + d[i]);
+          $("#cell-"+i).removeClass("empty");
+            $("#cell-"+i).removeClass("red");
+            $("#cell-"+i).removeClass("blue");
+          if (d[i] == 1) {
+            $("#cell-"+i).addClass("red");
+          } else if (d[i] == -1) {
+            $("#cell-"+i).addClass("blue");
+          } else {
+            $("#cell-"+i).addClass("empty");
+          }
+        }
+        //$("#board").html(b.string());
         turn *= -1;
         if (b.is_won() == 0 && b.free_columns().length > 0) {
           setTimeout(f, 100);

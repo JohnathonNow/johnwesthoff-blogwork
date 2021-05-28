@@ -2,10 +2,10 @@ use rand::prelude::*;
 use std::{cmp::min, collections::HashMap, fmt::Display};
 use wasm_bindgen::prelude::*;
 
-const MAX_FUTURES: usize = 3;
-const SCORE_THRESHOLD: i32 = 100000;
+const MAX_FUTURES: usize = 7;
+const SCORE_THRESHOLD: i32 = 10000000;
 const WEIGHT_WIN: i32 = 4;
-const WEIGHT_LOSS: i32 = 5;
+const WEIGHT_LOSS: i32 = 2000;
 const WEIGHT_TIE: i32 = 1;
 
 #[cfg(target_arch = "wasm32")]
@@ -69,6 +69,15 @@ impl Board {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Board { board: [[0; 6]; 7] }
+    }
+    pub fn raw(&self) -> Vec<i8> {
+        let mut v = Vec::new();
+        for col in (0..6).rev() {
+            for row in 0..7 {
+                v.push(self.board[row][col]);
+            }
+        }
+        v
     }
     pub fn string(&self) -> String {
         let mut s = String::new();

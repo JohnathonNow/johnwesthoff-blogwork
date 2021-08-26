@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>hello-wasm example</title>
+  <style>
+    .empty {
+      background-color: #bbb;
+    }
+
+    .red {
+      background-color: #aa1111;
+    }
+
+    .blue {
+      background-color: #1111aa;
+    }
+
+    .circle {
+      width: 90%;
+      height: 0;
+      padding-bottom: 90%;
+      position: relative;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .cell {
+      width: 7%;
+      height: auto;
+      display: inline-block;
+    }
+
+    .row {
+      height: 7%;
+      width: 70%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game"></div>
+  <pre id="board"></pre>
+  <button id="reset">Reset</button>
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+    integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+  <script type="module">
+    import init, { Board, Evaluator, Evaluation } from "./pkg/connect4.js";
+    console.log("dole");
+    var turn = 1;
+    async function run() {
+      console.log("bob");
+
+      const wasm = await init().catch(console.error);
+      console.log(wasm);
+
+      var b = new Board();
+      var ev = new Evaluator();
+
+      //$("#board").html(b.string());
+      function repaint() {
+        var d = b.raw();
+        for (var i = 0; i < d.length; i++) {
+          $("#cell-" + i).removeClass("empty");
+          $("#cell-" + i).removeClass("red");
+          $("#cell-" + i).removeClass("blue");
+          if (d[i] == 1) {
+            $("#cell-" + i).addClass("red");
+          } else if (d[i] == -1) {
+            $("#cell-" + i).addClass("blue");
+          } else {
+            $("#cell-" + i).addClass("empty");
+          }
+        }
+      }
+      function f(slot) {
+        console.log("f" + slot);
+        if (turn == -1) {
+          return;
+        }
+        setTimeout(function () {
+          turn = -1;
+          if (b.is_won() == 0 && b.free_columns().length > 0) {
+            b.place(1, slot);
+          }
+          repaint();
+          setTimeout(repaint, 0);
+          setTimeout(function () {
+            var x = ev.get_move(b, -1);
+            if (b.is_won() == 0 && b.free_columns().length > 0) {
+              b.place(-1, x.slot);
+            }
+            setTimeout(repaint, 0);
+            turn = 1;
+          }, 0);
+        }, 0);
+      }
+
+
+      for (var y = 0; y < 6; y++) {
+        var row = $("<div>").addClass("row");
+        for (var x = 0; x < 7; x++) {
+          var cell = $("<div>").addClass("cell");
+          var circle = $("<div>").addClass("circle").addClass("empty").attr("id", "cell-" + (y * 7 + x));
+          cell.append(circle);
+          let t = x;
+          cell.click(() => {
+            console.log("clicked " + t);
+            setTimeout(function () { f(t) }, 1);
+          });
+          row.append(cell);
+        }
+        $("#game").append(row);
+      }
+      $("#reset").click(() => {
+        b = new Board();
+        ev = new Evaluator();
+        repaint();
+      });
+    }
+
+    run();
+
+  </script>
+</body>
+
+</html>

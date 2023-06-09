@@ -109,8 +109,16 @@ async fn user_connected(ws: WebSocket, peer_map: PeerMap, gtx: broadcast::Sender
             if let Ok(packet) = serde_json::from_str::<packets::Incoming>(&message) {
                 println!("MainLoop: It's {:?}!", packet);
                 match packet {
-                    packets::Incoming::Chat{message} => {
-                        let _ = gtx.send(serde_json::to_string(&packets::Outgoing::Chat{sender: login_name.clone(), message, tick: 0}).unwrap());
+                    packets::Incoming::Guess{username, guess} => {
+                        if guess == "!word" {
+                            if let Some(sender) = peer_map.lock().unwrap().get(&user_id) {
+                                sender.send(serde_json::to_string(&packets::Outgoing::Assign{username: login_name.clone(), assignment: "bob".into()}).unwrap()).unwrap_or(0);
+                            }
+                        }
+                        let _ = gtx.send(serde_json::to_string(&packets::Outgoing::Guess{username: login_name.clone(), guess}).unwrap());
+                    },
+                    packets::Incoming::Image{username, image} => {
+                        let _ = gtx.send(serde_json::to_string(&packets::Outgoing::Image{username: login_name.clone(), image}).unwrap());
                     },
                     _ => {}
                 }

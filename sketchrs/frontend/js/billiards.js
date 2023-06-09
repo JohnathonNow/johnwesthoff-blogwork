@@ -4,7 +4,7 @@ var gName = null;
 var socket = null;
 
 function connect() {
-new WebSocket('ws://'+window.location.hostname+':3030/chat');
+socket = new WebSocket('ws://'+window.location.hostname+':3030/chat');
 
 // Event listener for when the WebSocket connection is established
 socket.addEventListener('open', event => {
@@ -15,12 +15,30 @@ socket.addEventListener('open', event => {
 socket.addEventListener('message', event => {
   const message = event.data;
   console.log('Received message:', message);
-
-  // Append the received message to the chat log
-  const messageElement = document.createElement('div');
-  messageElement.textContent = message;
-  chatLog.appendChild(messageElement);
-    // TODO: SOMETHING
+  let data = JSON.parse(message);
+  if (data["Guess"]) {
+    msg = '';
+    if (data["Guess"]["username"] === "") {
+        msg += '<b class="warn">' + data["Guess"]["guess"] + '</b><br>'
+    } else {
+        msg += '<b>' + data["Guess"]["username"] + ':</b> ' + data["Guess"]["guess"] + '<br>'
+    }
+    $('#answers').html($('#answers').html() + msg);
+  } else if (data["Image"]) {
+    if (data["Image"]["username"] !== gName) {
+        $("#picture").attr("src", data["Image"]["image"]);
+        $('#picture').show();
+        $('#canvas').hide();
+    } else {
+        $('#picture').hide();
+        $('#canvas').show();
+    }
+  } else if (data["Assign"]) {
+    $('#picture').hide();
+    $('#canvas').show();
+    console.log("oh");
+    gDrawer = gName;
+  }
 });
 
 // Event listener for WebSocket errors
@@ -35,28 +53,6 @@ socket.addEventListener('close', event => {
 });
 }
 connect();
-
-// Function to send a message to the server
-function sendMessage() {
-  const message = messageInput.value;
-  if (gUsername) {
-      socket.send(JSON.stringify({"Chat": {"message": message}}));
-  } else {
-      gUsername = message;
-      socket.send(JSON.stringify({"Login": {"username": message}}));
-  }
-  messageInput.value = '';
-}
-
-// Event listener for the send button
-sendButton.addEventListener('click', sendMessage);
-
-// Event listener for the Enter key in the message input field
-messageInput.addEventListener('keydown', event => {
-  if (event.key === 'Enter') {
-    sendMessage();
-  }
-});
 
 
 function onload_billiards() {
@@ -73,79 +69,21 @@ function onload_billiards() {
         }});
     }
 
-    function getDrawing() {
-        $.ajax({
-            url: "/rest/"+gImageV,
-            type: "GET",
-            success: function (response) {
-                if (response['status'] === 'success') {
-                    gImageV = response['payload']['version'];
-                    if (gDrawer !== gName) {
-                        $("#picture").attr("src",response['payload']['image']);
-                    }
-                    setTimeout(getDrawing, 10);
-                } else {
-                    gImageV = 0;
-                    setTimeout(getDrawing, 1000);
-                }
-            },
-            error: function (e) {
-                console.log(e);
-                setTimeout(getDrawing, 1000);
-            }
-        });
-    }
-
-    function getGuesses() {
-        $.ajax({
-            url: "/guess/"+gGuessV+"/"+gName,
-            type: "GET",
-            success: function (response) {
-                tick(response['payload']['time']);
-                var messages = response['messages'];
-                var msges = '';
-                for (var i = 0; i < messages.length; i++) {
-                    if (messages[i].kind === "word") {
-                        clear_canvas();
-                    }
-                    if (messages[i].name === "") {
-                        msges += '<b class="warn">' + messages[i].message + '</b><br>'
-                    } else {
-                        msges += '<b>' + messages[i].name + ':</b> ' + messages[i].message + '<br>'
-                    }
-                }
-                $('#answers').html($('#answers').html() + msges);
-                gGuessV = response['payload']["version"]; 
-                gDrawer = response['payload']["drawer"]; 
-                if (gDrawer === gName) {
-                    $('#picture').hide();
-                    $('#canvas').show();
-                } else {
-                    $('#picture').show();
-                    $('#canvas').hide();
-                }
-                $("#answers").stop();
-                $("#answers").animate({scrollTop:$("#answers")[0].scrollHeight}, 500);
-                setTimeout(getGuesses, 10);
-            },
-            error: function (e) {
-                setTimeout(getGuesses, 1000);
-            }
-        });
-    }
-
     function register() {
-        socket.send({"Login" : {"username": gName}});
+        socket.send(JSON.stringify({"Login" : {"username": gName}}));
+        $('#game').show();
+        $('#login').hide();
+        on_visible();
     }
 
     function sendGuess(g) {
-        socket.send({"Guess": {"username": gName, "guess": g}});
+        socket.send(JSON.stringify({"Guess": {"username": gName, "guess": g}}));
     }
 
     function sendDrawing() {
         if (gDrawer === gName) {
             var dataURL = canvas.toDataURL();
-            socket.send{({"Image": {"usernane": gName, "img": dataURL}});
+            socket.send(JSON.stringify({"Image": {"username": gName, "image": dataURL}}));
         }
     }
 

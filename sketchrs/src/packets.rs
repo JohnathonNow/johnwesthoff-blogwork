@@ -24,7 +24,7 @@ pub enum Outgoing {
         username: String,
         image: String,
     },
-    Assig {
+    Assign {
         username: String,
         assignment: String,
     },

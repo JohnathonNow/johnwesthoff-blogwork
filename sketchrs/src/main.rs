@@ -10,12 +10,14 @@ use warp::Filter;
 
 type PeerMap = HashMap<u64, broadcast::Sender<String>>;
 type GameState = Arc<Mutex<State>>;
+type Words = HashMap<String, String>;
 
 mod packets;
 
 struct State {
     peer_map: PeerMap,
     sendable: packets::State,
+    words: Words
 }
 
 impl State {
@@ -23,6 +25,7 @@ impl State {
         Self {
             peer_map: HashMap::new(),
             sendable: packets::State::new(),
+            words: HashMap::new(),
         }
     }
 }

@@ -23,18 +23,27 @@ function onload_billiards() {
             console.log('Received message:', message);
             let data = JSON.parse(message);
             if (data["Guess"]) {
-                msg = '';
+                let chat = document.getElementById('answers');
+                let line = document.createElement("div");
                 if (data["Guess"]["username"] === "") {
-                    msg += '<b class="warn">' + data["Guess"]["guess"] + '</b><br>'
+                    let msg = document.createElement("b");
+                    msg.classList = "warn";
+                    msg.textContent = data["Guess"]["guess"];
+                    line.append(msg, document.createElement("br"));
                 } else {
-                    msg += '<b>' + data["Guess"]["username"] + ':</b> ' + data["Guess"]["guess"] + '<br>'
+                    let user = document.createElement("b");
+                    user.textContent = data["Guess"]["username"]  + ": ";
+                    line.append(user, data["Guess"]["guess"], document.createElement("br"));
                 }
-                $('#answers').html($('#answers').html() + msg);
+                chat.append(line);
+                while (chat.children.length > 30) {
+                    chat.removeChild(chat.children[0]);
+                }
+                chat.scrollTop = chat.scrollHeight;
             } else if (data["Image"]) {
                 add_drawing(data["Image"]["username"], data["Image"]["image"])
             } else if (data["Assign"]) {
-                console.log("oh");
-                gDrawer = gName;
+                document.getElementById("word").textContent = "Your word is " + data["Assign"]["assignment"];
             } else if (data["FullState"]) {
                 for (var p in data["FullState"]["state"]["players"]) {
                     if (p !== gName) {

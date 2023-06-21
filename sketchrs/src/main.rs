@@ -28,6 +28,13 @@ impl State {
             words: HashMap::new(),
         }
     }
+    fn guess(&mut self, guesser: &String, guess: &String) -> Option<i32> {
+        if let Some(drawer) = self.words.get(guess) {
+            Some(self.sendable.guess(drawer, guesser))
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -139,19 +146,29 @@ async fn user_connected(
                                         serde_json::to_string(&packets::Outgoing::Assign {
                                             username: login_name.clone(),
                                             assignment: "bob".into(),
-                                        })
-                                        .unwrap(),
+                                        },)
+                                        .unwrap()
                                     )
                                     .unwrap_or(0);
                             }
                         }
-                        let _ = gtx.send(
-                            serde_json::to_string(&packets::Outgoing::Guess {
-                                username: login_name.clone(),
-                                guess,
-                            })
-                            .unwrap(),
-                        );
+                        if let Some(time) = game_state.lock().unwrap().guess(&username, &guess) {
+                            let _ = gtx.send(
+                                serde_json::to_string(&packets::Outgoing::Guess {
+                                    username: "".into(),
+                                    guess: format!("{} guessed a word at {}!", &login_name, time).to_string(),
+                                },)
+                                .unwrap()
+                            );
+                        } else {
+                            let _ = gtx.send(
+                                serde_json::to_string(&packets::Outgoing::Guess {
+                                    username: login_name.clone(),
+                                    guess,
+                                })
+                                .unwrap(),
+                            );
+                        }
                     }
                     packets::Incoming::Image { username, image } => {
                         game_state

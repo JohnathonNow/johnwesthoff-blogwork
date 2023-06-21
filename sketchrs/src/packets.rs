@@ -27,6 +27,16 @@ impl State {
         } 
         self.players.get_mut(name).unwrap()
     }
+    pub fn guess(&mut self, drawer: &String, guesser: &String) -> i32 {
+        let time = self.time;
+        let player = self.get_player_mut(drawer);
+        if let None = player.guess_list.get(guesser) {
+            player.guess_list.insert(guesser.clone(), time);
+            self.time
+        } else {
+            0
+        }
+    }
 }
 
 

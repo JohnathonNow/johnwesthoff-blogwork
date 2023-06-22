@@ -8,6 +8,7 @@ use tokio::task;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
+
 type PeerMap = HashMap<u64, broadcast::Sender<String>>;
 type GameState = Arc<Mutex<State>>;
 type Words = HashMap<String, String>;
@@ -17,7 +18,9 @@ mod packets;
 struct State {
     peer_map: PeerMap,
     sendable: packets::State,
-    words: Words
+    words: Words,
+    word_pool: Vec<String>,
+    host: Option<String>,
 }
 
 impl State {
@@ -26,6 +29,8 @@ impl State {
             peer_map: HashMap::new(),
             sendable: packets::State::new(),
             words: HashMap::new(),
+            word_pool: Vec::new(),
+            host: None,
         }
     }
     fn guess(&mut self, guesser: &String, guess: &String) -> Option<i32> {
@@ -35,9 +40,18 @@ impl State {
             None
         }
     }
+    fn assign_word(&mut self, drawer: &String) -> String {
+        if let Some(x) = self.words.values().find(|&x| x == drawer) {
+            return x.clone();
+        } else {
+            let word = self.word_pool.pop().unwrap();
+            self.words.insert(word.clone(), drawer.clone());
+            word
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Query {
     name: String,
 }
@@ -92,16 +106,19 @@ async fn user_connected(
 
     // Generate a unique ID for the user
     let user_id = rand::random::<u64>();
-
-    // Save the sender in the peer map
-    game_state
-        .lock()
-        .unwrap()
-        .peer_map
-        .insert(user_id, tx.clone());
+    {
+        let mut gs = game_state.lock().unwrap();
+        // Save the sender in the peer map
+        if gs.host.is_none() {
+            gs.host = Some(login_name.clone());
+        }
+        gs.peer_map.insert(user_id, tx.clone());
+        drop(gs);
+    }
     // Forward incoming messages from the user to the broadcast channel
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
     let user_id_clone = user_id;
+
     println!("USER {} CONNECTED!", login_name);
     tokio::task::spawn(async move {
         game_state
@@ -137,28 +154,44 @@ async fn user_connected(
             if let Ok(packet) = serde_json::from_str::<packets::Incoming>(&message) {
                 println!("MainLoop: It's {:?}!", packet);
                 match packet {
-                    packets::Incoming::Guess { username, guess } => {
-                        if guess == "!word" {
-                            if let Some(sender) = game_state.lock().unwrap().peer_map.get(&user_id)
-                            {
-                                sender
-                                    .send(
-                                        serde_json::to_string(&packets::Outgoing::Assign {
-                                            username: login_name.clone(),
-                                            assignment: "bob".into(),
-                                        },)
-                                        .unwrap()
-                                    )
-                                    .unwrap_or(0);
+                    packets::Incoming::Start {  } => {
+                        let mut gs = game_state.lock().unwrap();
+                        if let Some(host) = &gs.host {
+                            if host == &login_name {
+                                gs.sendable.set_state(packets::GameState::RUNNING);
                             }
                         }
+                        let _ = gtx.send(
+                            serde_json::to_string(&packets::Outgoing::FullState {
+                                state: &game_state.lock().unwrap().sendable,
+                            })
+                            .unwrap(),
+                        );
+                    },
+                    packets::Incoming::Assign {} => {
+                        let mut gs = game_state.lock().unwrap();
+                        let word = gs.assign_word(&login_name);
+                        if let Some(sender) = gs.peer_map.get(&user_id) {
+                            sender
+                                .send(
+                                    serde_json::to_string(&packets::Outgoing::Assign {
+                                        username: login_name.clone(),
+                                        assignment: word,
+                                    })
+                                    .unwrap(),
+                                )
+                                .unwrap_or(0);
+                        }
+                    }
+                    packets::Incoming::Guess { username, guess } => {
                         if let Some(time) = game_state.lock().unwrap().guess(&username, &guess) {
                             let _ = gtx.send(
                                 serde_json::to_string(&packets::Outgoing::Guess {
                                     username: "".into(),
-                                    guess: format!("{} guessed a word at {}!", &login_name, time).to_string(),
-                                },)
-                                .unwrap()
+                                    guess: format!("{} guessed a word at {}!", &login_name, time)
+                                        .to_string(),
+                                })
+                                .unwrap(),
                             );
                         } else {
                             let _ = gtx.send(

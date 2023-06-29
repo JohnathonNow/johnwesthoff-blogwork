@@ -4,6 +4,8 @@ var gImageV = 0;
 var gGuessV = 0;
 var socket = null;
 var gMap = new Map();
+var gMapLobby = new Map();
+
 
 function onload_billiards() {
     
@@ -46,10 +48,15 @@ function onload_billiards() {
                 document.getElementById("word").textContent = "Your word is " + data["Assign"]["assignment"];
             } else if (data["FullState"]) {
                 for (var p in data["FullState"]["state"]["players"]) {
+                    console.log("DOING " + p);
+                    let player = data["FullState"]["state"]["players"][p];
                     if (p !== gName) {
-                        let player = data["FullState"]["state"]["players"][p];
                         console.log(player);
                         add_drawing(p, player["drawing"]).setAttribute("active", player["active"]);
+                    }
+                    add_player(p).setAttribute("active", player["active"]);
+                    if (data["FullState"]["state"]["state"]["RUNNING"]) {
+                        sendAssign();
                     }
                 }
             }
@@ -65,6 +72,19 @@ function onload_billiards() {
             console.log('Disconnected from chat server');
             setTimeout(connect, 4000);
         });
+    }
+
+    
+    function add_player(player) {
+        if (!gMapLobby.has(player)) {
+            let newCanvas = document.createElement("b");
+            gMapLobby.set(player, newCanvas);
+            newCanvas.textContent = player;
+            newCanvas.appendChild(document.createElement("br"));
+            document.getElementById("playerlist").appendChild(newCanvas);
+        }
+        let canvas = gMapLobby.get(player);
+        return canvas;
     }
 
     function add_drawing(drawer, image) {
@@ -90,6 +110,14 @@ function onload_billiards() {
                 $("#timer").val(val);
             }
         });
+    }
+
+    function start() {
+        socket.send(JSON.stringify({ "Start": {  } }));
+    }
+
+    function sendAssign() {
+        socket.send(JSON.stringify({ "Assign": { } }));
     }
 
     function sendGuess(g) {
@@ -121,5 +149,8 @@ function onload_billiards() {
             $('#guess').val('');
         }
     });
+    document.getElementById("start").onclick = function search(e) {
+        start();
+    };
     setInterval(function () { tick($("#timer").val() - 1); }, 1000);
 }

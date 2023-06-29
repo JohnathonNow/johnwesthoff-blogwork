@@ -57,6 +57,8 @@ pub struct PlayerState {
     drawing: String,
     score: i32,
     guess_list: HashMap<String, i32>,
+    #[serde(skip_serializing)]
+    word: String,
 }
 
 impl PlayerState {
@@ -66,6 +68,7 @@ impl PlayerState {
             drawing: "".into(),
             score: 0,
             guess_list: HashMap::new(),
+            word: "".into(),
         }
     }
     pub fn set_active(&mut self, active: bool) {

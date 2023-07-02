@@ -1,55 +1,63 @@
 <head>
-    <title>It's a Bus</title>
+    <title>Parallel Pencil</title>
     <script src="/js/jquery.js"></script>
     <script src="/js/drawing.js"></script>
     <script src="/js/billiards.js"></script>
     <link rel="stylesheet" href="/style/style.css">
 </head>
+
 <body onload="onload_drawing(); onload_billiards();">
     <div align="center">
-        <h1>Billiards</h1>
-        <h2>A Drawing Game</h2>
+        <h1>Parallel Pencil</h1>
     </div>
     <div id="login" align="center">
         <h3 class="full">Login</h3>
-        <div class="flex"> <div class="full"> Name: </div> <input type="text" class="full" name="FirstName" id="name" value=""> </div>
+        <div class="flex">
+            <div class="full"> Name: </div> <input type="text" class="full" name="FirstName" id="name" value="">
+        </div>
     </div>
     <div align="center" id="game">
         <meter id="timer" min="0" max="120"></meter>
         <div id="gamecontainer">
-            <div id="drawingcontainer">
-                <div id="word"> 
-                    <br>
+            <div id="progress-container">
+                <div id="player-container">
+                    <h2>Players:</h2>
+                    <ul class="user-list" id="user-list-1"></ul>
                 </div>
-                <div id="drawing">
-                    <canvas class="image" id="canvas"></canvas>
-                </div>
-                <div id="controls"> <br>
-                    <input type="color" id="colorpicker">
-                    <input type="range" id="size" value="5" min="1" max="50">
-                    <button id="erase">Eraser</button>
-                    <button id="pencil">Pencil</button>
-                    <button id="undo">Undo</button>
-                    <br>
+                <div id="drawing-container">
+                    <div id="word">
+                        <br>
+                    </div>
+                    <div id="gallery">
+                        <div id="drawing">
+                            <canvas class="image" id="canvas" style="display: block;"></canvas>
+                        </div>
+                    </div>
+                    <div id="controls"> <br>
+                        <input type="color" id="colorpicker">
+                        <input type="range" id="size" value="5" min="1" max="50">
+                        <button id="erase">Eraser</button>
+                        <button id="pencil">Pencil</button>
+                        <button id="undo">Undo</button>
+                        <br>
+                    </div>
                 </div>
             </div>
             <div id="lobby-container">
                 <h2>Players:</h2>
-                <ul class="user-list" id="user-list"></ul>
+                <ul class="user-list" id="user-list-2"></ul>
                 <button id="start">Start</button>
             </div>
             <div id="endgame-container">
                 <h2>Players:</h2>
-                <ul class="user-list" id="user-list2"></ul>
+                <ul class="user-list" id="user-list-3"></ul>
                 <button id="restart">Restart</button>
             </div>
             <div id="answerscontainer">
                 <div id="answers"> </div>
                 <div id="dummy"> Guess: <input type="text" name="FirstName" id="guess" value=""> </div>
             </div>
-            <div id="gallery">
-
-            </div>
         </div>
     </div>
+
 </body>

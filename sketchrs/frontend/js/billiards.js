@@ -6,6 +6,7 @@ var socket = null;
 var gMap = new Map();
 var gMapLobby = new Map();
 var gAssign = null;
+var gState = null;
 
 
 function onload_billiards() {
@@ -49,6 +50,7 @@ function onload_billiards() {
                 gAssign = data["Assign"]["assignment"];
                 document.getElementById("word").textContent = "Your word is " + gAssign;
             } else if (data["FullState"]) {
+                let namelist = get_namelist(data["FullState"]["state"]);
                 for (var p in data["FullState"]["state"]["players"]) {
                     console.log("DOING " + p);
                     let player = data["FullState"]["state"]["players"][p];
@@ -56,7 +58,12 @@ function onload_billiards() {
                         console.log(player);
                         add_drawing(p, player["drawing"]).setAttribute("active", player["active"]);
                     }
-                    add_player(p).setAttribute("active", player["active"]);
+                    let nametag = add_player(p);
+                    nametag.setAttribute("active", player["active"]);
+                    namelist.append(nametag);
+                    if (p == gName) {
+                        nametag.setAttribute("me", true);
+                    }
                     if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                         sendAssign();
                     }
@@ -78,19 +85,31 @@ function onload_billiards() {
     }
 
     function tick(state) {
+        gState = state;
         console.log(state)
         if (state["state"] == "RUNNING") {
-            document.getElementById("drawingcontainer").style.display = "block";
+            document.getElementById("progress-container").style.display = "flex";
             document.getElementById("lobby-container").style.display = "none";
             document.getElementById("endgame-container").style.display = "none";
+            on_visible();
         } else if (state["state"] == "LOBBY") {
-            document.getElementById("drawingcontainer").style.display = "none";
+            document.getElementById("progress-container").style.display = "none";
             document.getElementById("lobby-container").style.display = "block";
             document.getElementById("endgame-container").style.display = "none";
         } else if (state["state"] == "POSTGAME") {
-            document.getElementById("drawingcontainer").style.display = "none";
+            document.getElementById("progress-container").style.display = "none";
             document.getElementById("lobby-container").style.display = "none";
             document.getElementById("endgame-container").style.display = "block";
+        }
+    }
+
+    function get_namelist(state) {
+        if (state["state"] == "RUNNING") {
+            return document.getElementById("user-list-1");
+        } else if (state["state"] == "LOBBY") {
+            return document.getElementById("user-list-2");
+        } else if (state["state"] == "POSTGAME") {
+            return document.getElementById("user-list-3");
         }
     }
     
@@ -99,11 +118,35 @@ function onload_billiards() {
             const listItem = document.createElement('li');
             listItem.textContent = player;
             listItem.classList.add('user-list-item');
+            listItem.setAttribute("__player", player);
+            listItem.onclick = player_click;
             gMapLobby.set(player, listItem);
-            document.getElementById("user-list").appendChild(listItem);
         }
         let nametag = gMapLobby.get(player);
         return nametag;
+    }
+    
+    function player_click(e) {
+        if (gState["state"] == "RUNNING") {
+            for (let p of gMap.values()) {
+                p.style.display = "none";
+                console.log(p);
+            }
+            for (let p of gMapLobby.values()) {
+                p.setAttribute("selected", "false");
+            }
+        
+            gMap.get(e.target.getAttribute("__player")).style.display = "block";
+            gMapLobby.get(e.target.getAttribute("__player")).setAttribute("selected", "true");
+        }
+    }
+
+    function current_view(e) {
+       for (e of document.getElementsByClassName("image")) {
+            if (e.style.display != "none") { 
+                return e;
+            }
+        }
     }
 
     function add_drawing(drawer, image) {
@@ -122,6 +165,7 @@ function onload_billiards() {
     }
 
     function start() {
+        console.log("GO!");
         socket.send(JSON.stringify({ "Start": {  } }));
     }
 
@@ -148,8 +192,9 @@ function onload_billiards() {
             gName = $('#name').val();
             $('#game').show();
             $('#login').hide();
+            gMap.set(gName, document.getElementById("canvas"));
             connect();
-            on_visible();
+            document.cookie = gName;
         }
     });
     $("#guess").on("keydown", function search(e) {
@@ -158,10 +203,19 @@ function onload_billiards() {
             $('#guess').val('');
         }
     });
+
+    document.onmouseup = function(){document.getElementById("guess").focus();};
+    
     document.getElementById("start").onclick = function search(e) {
         start();
     };
-    document.getElementById("drawingcontainer").style.display = "block";
+    document.getElementById("progress-container").style.display = "none";
     document.getElementById("lobby-container").style.display = "none";
     document.getElementById("endgame-container").style.display = "none";
+    if (document.cookie != "") {
+        document.getElementById("name").value = document.cookie;
+    }
+    window.onresize = function(){
+        see_element(current_view());
+    };
 }

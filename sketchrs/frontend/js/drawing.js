@@ -1,18 +1,28 @@
 var canvas;
 var context;
 var strokes = new Array();
-
+var redraw = null;
 function clear_canvas() {
     strokes.length = 0;
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 }
 
+function see_element(element) {
+    let w = $(element.id).width();
+    /*$('#answers').css("max-height", $('#answers').height()+"px");*/
+    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*2 - canvas.getBoundingClientRect().top;
+    
+    $('.image').height(Math.min(mw, mw));
+    $('.image').width(Math.min(mw, mw));
+    element.setAttribute('width', $(element.id).width());
+    element.setAttribute('height', $(element.id).height());
+    //$('#picture').hide();
+    redraw();
+}
+
+
 function on_visible() {
-    $('.image').height($('#canvas').width());
-    $('#answers').css("max-height", $('#answers').height()+"px");
-    canvas.setAttribute('width', $('#canvas').width());
-    canvas.setAttribute('height', $('#canvas').height());
-    $('#picture').hide();
+    see_element(canvas);
 }
 
 function onload_drawing() {
@@ -107,7 +117,7 @@ function onload_drawing() {
                        "t": --TRACEBACK});
     }
 
-    function redraw(){
+    redraw = function(){
         //if (gDrawer !== gName) {
         //    return;
         //}

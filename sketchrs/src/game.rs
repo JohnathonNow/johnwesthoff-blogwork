@@ -27,6 +27,14 @@ impl State {
             host: None,
         }
     }
+    fn broadcast_state(&self) {
+        self.broadcast(
+            serde_json::to_string(&packets::Outgoing::FullState {
+                state: &self.sendable,
+            })
+            .unwrap(),
+        );
+    }
     fn broadcast(&self, message: String) {
         for (_, tx) in self.peer_map.iter() {
             tx.send(message.clone()).unwrap_or(0);
@@ -80,12 +88,7 @@ impl State {
                 self.sendable.tick_running();
                 if self.sendable.is_over() {
                     self.sendable.set_state(packets::GameState::POSTGAME);
-                    self.broadcast(
-                        serde_json::to_string(&packets::Outgoing::FullState {
-                            state: &self.sendable,
-                        })
-                        .unwrap(),
-                    );
+                    self.broadcast_state();
                 }
             }
             packets::GameState::POSTGAME => {}
@@ -216,6 +219,12 @@ pub async fn handle(
         let mut x = game_state.lock().unwrap();
         x.peer_map.remove(&login_name);
         x.sendable.get_player_mut(&login_name).set_active(false);
+        let _ = gtx.send(
+            serde_json::to_string(&packets::Outgoing::FullState {
+                state: &x.sendable,
+            })
+            .unwrap(),
+        );
     });
 
     while let Ok(msg) = _rx.recv().await {

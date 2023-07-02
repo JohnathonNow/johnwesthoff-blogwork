@@ -38,19 +38,10 @@ impl State {
     }
     pub fn tick_running(&mut self) {
         self.time += 1;
-
-        let mut count_guesses = 0;
-        let mut count_actives = 0;
-        for (_name, player) in &self.players {
-            if player.active {
-                count_actives += 1;
-                count_guesses += self.player_count_guesses(player);
-            }
-        }
+    }
+    pub fn is_over(&self) -> bool{
         let (count_actives, count_guesses) = self.players.iter().filter(|(_, p)| p.active).fold((0, 0), |a, (_, p)| (a.0 + 1, a.1 + self.player_count_guesses(p)));
-        if count_actives * (count_actives - 1) == count_guesses {
-            self.state = GameState::POSTGAME;
-        }
+        count_actives * (count_actives - 1) == count_guesses   
     }
     pub fn set_state(&mut self, new_state: GameState) {
         self.state = new_state;

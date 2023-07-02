@@ -5,6 +5,7 @@ var gGuessV = 0;
 var socket = null;
 var gMap = new Map();
 var gMapLobby = new Map();
+var gAssign = null;
 
 
 function onload_billiards() {
@@ -44,8 +45,9 @@ function onload_billiards() {
                 chat.scrollTop = chat.scrollHeight;
             } else if (data["Image"]) {
                 add_drawing(data["Image"]["username"], data["Image"]["image"])
-            } else if (data["Assign"]) {
-                document.getElementById("word").textContent = "Your word is " + data["Assign"]["assignment"];
+            } else if (data["Assign"]) { 
+                gAssign = data["Assign"]["assignment"];
+                document.getElementById("word").textContent = "Your word is " + gAssign;
             } else if (data["FullState"]) {
                 for (var p in data["FullState"]["state"]["players"]) {
                     console.log("DOING " + p);
@@ -55,9 +57,10 @@ function onload_billiards() {
                         add_drawing(p, player["drawing"]).setAttribute("active", player["active"]);
                     }
                     add_player(p).setAttribute("active", player["active"]);
-                    if (data["FullState"]["state"]["state"]["RUNNING"]) {
+                    if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                         sendAssign();
                     }
+                    tick(data["FullState"]["state"]);
                 }
             }
         });
@@ -74,17 +77,33 @@ function onload_billiards() {
         });
     }
 
+    function tick(state) {
+        console.log(state)
+        if (state["state"] == "RUNNING") {
+            document.getElementById("drawingcontainer").style.display = "block";
+            document.getElementById("lobby-container").style.display = "none";
+            document.getElementById("endgame-container").style.display = "none";
+        } else if (state["state"] == "LOBBY") {
+            document.getElementById("drawingcontainer").style.display = "none";
+            document.getElementById("lobby-container").style.display = "block";
+            document.getElementById("endgame-container").style.display = "none";
+        } else if (state["state"] == "POSTGAME") {
+            document.getElementById("drawingcontainer").style.display = "none";
+            document.getElementById("lobby-container").style.display = "none";
+            document.getElementById("endgame-container").style.display = "block";
+        }
+    }
     
     function add_player(player) {
         if (!gMapLobby.has(player)) {
-            let newCanvas = document.createElement("b");
-            gMapLobby.set(player, newCanvas);
-            newCanvas.textContent = player;
-            newCanvas.appendChild(document.createElement("br"));
-            document.getElementById("playerlist").appendChild(newCanvas);
+            const listItem = document.createElement('li');
+            listItem.textContent = player;
+            listItem.classList.add('user-list-item');
+            gMapLobby.set(player, listItem);
+            document.getElementById("user-list").appendChild(listItem);
         }
-        let canvas = gMapLobby.get(player);
-        return canvas;
+        let nametag = gMapLobby.get(player);
+        return nametag;
     }
 
     function add_drawing(drawer, image) {
@@ -100,16 +119,6 @@ function onload_billiards() {
         let canvas = gMap.get(drawer);
         canvas.setAttribute("src", image);
         return canvas;
-    }
-
-    function tick(t) {
-        $("#timer").animate({ val: t }, {
-            duration: 200,
-            easing: 'linear',
-            step: function (val) {
-                $("#timer").val(val);
-            }
-        });
     }
 
     function start() {
@@ -152,5 +161,7 @@ function onload_billiards() {
     document.getElementById("start").onclick = function search(e) {
         start();
     };
-    setInterval(function () { tick($("#timer").val() - 1); }, 1000);
+    document.getElementById("drawingcontainer").style.display = "block";
+    document.getElementById("lobby-container").style.display = "none";
+    document.getElementById("endgame-container").style.display = "none";
 }

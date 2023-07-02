@@ -1,14 +1,13 @@
+use super::packets;
+use futures::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use futures::{SinkExt, StreamExt};
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
-use super::packets;
 
 pub type GameState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
 type Words = HashMap<String, String>;
-
 
 pub struct State {
     pub peer_map: PeerMap,
@@ -28,10 +27,15 @@ impl State {
             host: None,
         }
     }
+    fn broadcast(&self, message: String) {
+        for (_, tx) in self.peer_map.iter() {
+            tx.send(message.clone()).unwrap_or(0);
+        }
+    }
     fn guess(&mut self, guesser: &String, guess: &String) -> Option<i32> {
         for (drawer, word) in &self.words {
             if word == guess && drawer != guesser {
-                return Some(self.sendable.guess(drawer, guesser))
+                return Some(self.sendable.guess(drawer, guesser));
             }
         }
         None
@@ -39,7 +43,7 @@ impl State {
     fn assign_all(&mut self) {
         println!("{:?}", self.word_pool);
         for (p, tx) in self.peer_map.iter() {
-            let word =  if let Some(x) = self.words.get(p) {
+            let word = if let Some(x) = self.words.get(p) {
                 x.clone()
             } else {
                 let word = self.word_pool.pop().unwrap();
@@ -71,11 +75,20 @@ impl State {
     }
     pub fn tick(&mut self) {
         match self.sendable.get_state() {
-            packets::GameState::LOBBY => {},
+            packets::GameState::LOBBY => {}
             packets::GameState::RUNNING => {
                 self.sendable.tick_running();
-            },
-            packets::GameState::POSTGAME => {},
+                if self.sendable.is_over() {
+                    self.sendable.set_state(packets::GameState::POSTGAME);
+                    self.broadcast(
+                        serde_json::to_string(&packets::Outgoing::FullState {
+                            state: &self.sendable,
+                        })
+                        .unwrap(),
+                    );
+                }
+            }
+            packets::GameState::POSTGAME => {}
         }
     }
 }

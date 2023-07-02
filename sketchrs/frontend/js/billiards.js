@@ -121,12 +121,12 @@ function onload_billiards() {
     }
 
     function sendGuess(g) {
-        socket.send(JSON.stringify({ "Guess": { "username": gName, "guess": g } }));
+        socket.send(JSON.stringify({ "Guess": { "guess": g } }));
     }
 
     function sendDrawing() {
         var dataURL = canvas.toDataURL();
-        socket.send(JSON.stringify({ "Image": { "username": gName, "image": dataURL } }));
+        socket.send(JSON.stringify({ "Image": { "image": dataURL } }));
     }
 
     $('#canvas').on('touchend mouseleave mouseup', function (e) {

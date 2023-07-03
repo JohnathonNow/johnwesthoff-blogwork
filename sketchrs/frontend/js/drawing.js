@@ -2,20 +2,22 @@ var canvas;
 var context;
 var strokes = new Array();
 var redraw = null;
+var redraw_other = null;
+var load_drawing = null;
+
 function clear_canvas() {
     strokes.length = 0;
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 }
 
 function see_element(element) {
-    let w = $(element.id).width();
     /*$('#answers').css("max-height", $('#answers').height()+"px");*/
-    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*2 - canvas.getBoundingClientRect().top;
+    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*4 - element.getBoundingClientRect().top;
     
-    $('.image').height(Math.min(mw, mw));
-    $('.image').width(Math.min(mw, mw));
-    element.setAttribute('width', $(element.id).width());
-    element.setAttribute('height', $(element.id).height());
+    $(element).height(mw);
+    $(element).width(mw);
+    element.setAttribute('width', mw);
+    element.setAttribute('height', mw);
     //$('#picture').hide();
     redraw();
 }
@@ -47,14 +49,14 @@ function onload_drawing() {
         border = parseInt(border);
         var touches = e.originalEvent.changedTouches;
         if (touches) {
-            addClick(touches[0].pageX - this.offsetLeft - border,
-                     touches[0].pageY - this.offsetTop - border,
+            addClick((touches[0].pageX - this.offsetLeft - border) / context.canvas.width * 1000,
+                     (touches[0].pageY - this.offsetTop - border) / context.canvas.height * 1000,
                      color,
                      size,
                      mode);
         } else {
-            addClick(e.pageX - this.offsetLeft - border,
-                     e.pageY - this.offsetTop - border,
+            addClick((e.pageX - this.offsetLeft - border) / context.canvas.width * 1000,
+                     (e.pageY - this.offsetTop - border) / context.canvas.height * 1000,
                      color,
                      size,
                      mode);
@@ -69,15 +71,15 @@ function onload_drawing() {
             b = parseInt(b);
             var touches = e.originalEvent.changedTouches;
             if (touches) {
-                addClick(touches[0].pageX - this.offsetLeft - b,
-                         touches[0].pageY - this.offsetTop - b,
+                addClick((touches[0].pageX - this.offsetLeft - b) / context.canvas.width * 1000,
+                         (touches[0].pageY - this.offsetTop - b) / context.canvas.height * 1000,
                          color,
                          size,
                          mode,
                          true);
             } else {
-                addClick(e.pageX - this.offsetLeft - b,
-                         e.pageY - this.offsetTop - b,
+                addClick((e.pageX - this.offsetLeft - b) / context.canvas.width * 1000,
+                         (e.pageY - this.offsetTop - b) / context.canvas.height * 1000,
                          color,
                          size,
                          mode,
@@ -101,8 +103,10 @@ function onload_drawing() {
     function undo()
     {
         if (strokes.length > 0) {
+            var len = strokes.length;
             strokes = strokes.slice(0, strokes[strokes.length - 1]["t"]);
             redraw();
+            gUndo(strokes.length - len);
         }
     }
 
@@ -118,27 +122,36 @@ function onload_drawing() {
     }
 
     redraw = function(){
+        redraw_other(context, strokes);
+    }
+
+    redraw_other = function(ctx, stks){
         //if (gDrawer !== gName) {
         //    return;
         //}
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        context.lineJoin = "round";
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.lineJoin = "round";
                 
-        for(var i=0; i < strokes.length; i++) {		
-            context.strokeStyle = strokes[i]["c"];
-            context.lineWidth = strokes[i]["s"];
-            context.globalCompositeOperation = strokes[i]["m"];
-            context.beginPath();
-            if(strokes[i]["d"] && i){
-                context.moveTo(strokes[i-1]["x"], strokes[i-1]["y"]);
+        for(var i=0; i < stks.length; i++) {		
+            ctx.strokeStyle = stks[i]["c"];
+            ctx.lineWidth = stks[i]["s"];
+            ctx.globalCompositeOperation = stks[i]["m"];
+            ctx.beginPath();
+            if(stks[i]["d"] && i){
+                ctx.moveTo(stks[i-1]["x"]*ctx.canvas.width/1000, stks[i-1]["y"]*ctx.canvas.height/1000);
             } else {
-                context.moveTo(strokes[i]["x"]-1, strokes[i]["y"]);
+                ctx.moveTo(stks[i]["x"]*ctx.canvas.width/1000-1, stks[i]["y"]*ctx.canvas.height/1000);
             }
-            context.lineTo(strokes[i]["x"], strokes[i]["y"]);
-            context.closePath();
-            context.stroke();
+            ctx.lineTo(stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000);
+            ctx.closePath();
+            ctx.stroke();
         }
     }
+    
+    load_drawing = function(strks) {
+        strokes = strks.map(x => JSON.parse(x));
+    }
+
 
     $('#canvas').on('touchstart mousedown', touch);
     $('#canvas').on('touchmove mousemove', untouch);

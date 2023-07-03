@@ -4,21 +4,26 @@ var gImageV = 0;
 var gGuessV = 0;
 var socket = null;
 var gMap = new Map();
+var gStrokes = new Map();
 var gMapLobby = new Map();
 var gAssign = null;
 var gState = null;
-
+var lastStroke = 0;
+var gUndo = null;
+var gstrks = null;
+var repull = true;
 
 function onload_billiards() {
     
     function connect() {
         console.log("PLANETARY (GO!)")
-        socket = new WebSocket('ws://' + window.location.hostname + ':3030/chat?name=' + encodeURIComponent(gName));
+        socket = new WebSocket('ws://' + window.location.hostname + ':'+ window.location.port +'/chat?name=' + encodeURIComponent(gName));
         //socket = new WebSocket('ws://' + window.location.hostname + ':3030/chat');
         console.log(socket)
         // Event listener for when the WebSocket connection is established
         socket.addEventListener('open', event => {
-            console.log('Connected to chat server');
+            repull = true;
+            socket.send(JSON.stringify({ "Pull": { "username": gName, i: 0 } }));
         });
 
         // Event listener for incoming messages from the server
@@ -45,7 +50,18 @@ function onload_billiards() {
                 }
                 chat.scrollTop = chat.scrollHeight;
             } else if (data["Image"]) {
+                console.log("EEEEE: " + data["Image"]["i"]);
                 add_drawing(data["Image"]["username"], data["Image"]["image"])
+                if (data["Image"]["username"] != gName && data["Image"]["i"] < gStrokes.get(data["Image"]["username"]).length) {
+                    socket.send(JSON.stringify({ "Pull": { "username": data["Image"]["username"], i: gStrokes.get(data["Image"]["username"]).length } }));
+                }
+                if (data["Image"]["username"] == gName && repull) {
+                    load_drawing(data["Image"]["image"]);
+                    repull = false;
+                    redraw();
+                }
+            } else if (data["Undo"]) {
+                undo_other(data["Undo"]["username"]);
             } else if (data["Assign"]) { 
                 gAssign = data["Assign"]["assignment"];
                 document.getElementById("word").textContent = "Your word is " + gAssign;
@@ -54,20 +70,20 @@ function onload_billiards() {
                 for (var p in data["FullState"]["state"]["players"]) {
                     console.log("DOING " + p);
                     let player = data["FullState"]["state"]["players"][p];
-                    if (p !== gName) {
-                        console.log(player);
-                        add_drawing(p, player["drawing"]).setAttribute("active", player["active"]);
-                    }
                     let nametag = add_player(p);
                     nametag.setAttribute("active", player["active"]);
                     namelist.append(nametag);
                     if (p == gName) {
                         nametag.setAttribute("me", true);
                     }
-                    if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
-                        sendAssign();
-                    }
-                    tick(data["FullState"]["state"]);
+                    add_drawing(p, []);
+                }
+                tick(data["FullState"]["state"]);
+                if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
+                    sendAssign();
+                }
+                for ([player, strokes] of gStrokes) {
+                    socket.send(JSON.stringify({ "Pull": { "username": player, i: strokes.length } }));
                 }
             }
         });
@@ -113,6 +129,12 @@ function onload_billiards() {
         }
     }
     
+    gUndo = function(qty) {
+        //lastStroke -= 2;
+        lastStroke = strokes.length;
+        socket.send(JSON.stringify({ "Undo": { "i": qty} }));
+    }
+
     function add_player(player) {
         if (!gMapLobby.has(player)) {
             const listItem = document.createElement('li');
@@ -135,8 +157,14 @@ function onload_billiards() {
             for (let p of gMapLobby.values()) {
                 p.setAttribute("selected", "false");
             }
-        
-            gMap.get(e.target.getAttribute("__player")).style.display = "block";
+            let can = gMap.get(e.target.getAttribute("__player"));
+            gstrks = gStrokes.get(e.target.getAttribute("__player"));
+            can.style.display = "block";
+            see_element(can);
+            if (gstrks) {
+                redraw_other(can.getContext("2d"), gstrks);
+            }
+            redraw();
             gMapLobby.get(e.target.getAttribute("__player")).setAttribute("selected", "true");
         }
     }
@@ -149,18 +177,39 @@ function onload_billiards() {
         }
     }
 
+    function undo_other(drawer) {
+        if (drawer == gName) {
+            return;
+        }
+        if (!gStrokes.has(drawer)) {
+            gStrokes.set(drawer, []);
+            return;
+        }
+        let strks = gStrokes.get(drawer);
+        gStrokes.set(drawer, strks.slice(0, strks[strks.length - 1]["t"]));
+        add_drawing(drawer, []);
+    }
+
     function add_drawing(drawer, image) {
         if (drawer == gName) {
             return;
         }
+        if (!gStrokes.has(drawer)) {
+            gStrokes.set(drawer, []);
+        }
         if (!gMap.has(drawer)) {
-            let newCanvas = document.createElement("img");
+            let newCanvas = document.createElement("canvas");
             gMap.set(drawer, newCanvas);
             newCanvas.classList = "image";
             document.getElementById("gallery").appendChild(newCanvas);
         }
+        console.log("AAAAAAA: " + gStrokes.get(drawer).length);
+        let strks = gStrokes.get(drawer).concat(image.map(x => JSON.parse(x)));
+        gStrokes.set(drawer, strks);
         let canvas = gMap.get(drawer);
-        canvas.setAttribute("src", image);
+        see_element(canvas);
+        redraw_other(canvas.getContext("2d"), strks);
+        redraw();
         return canvas;
     }
 
@@ -178,8 +227,11 @@ function onload_billiards() {
     }
 
     function sendDrawing() {
-        var dataURL = canvas.toDataURL();
-        socket.send(JSON.stringify({ "Image": { "image": dataURL } }));
+        var data = strokes.slice(lastStroke).map(x => JSON.stringify(x));
+        lastStroke = strokes.length;
+        if (data.length > 0) {
+            socket.send(JSON.stringify({ "Image": { "image": data } }));
+        }
     }
 
     $('#canvas').on('touchend mouseleave mouseup', function (e) {
@@ -217,5 +269,7 @@ function onload_billiards() {
     }
     window.onresize = function(){
         see_element(current_view());
+        redraw_other(current_view().getContext("2d"), gstrks);
+        redraw();
     };
 }

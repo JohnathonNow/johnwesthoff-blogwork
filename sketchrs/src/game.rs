@@ -198,20 +198,53 @@ pub async fn handle(
                         }
                     }
                     packets::Incoming::Image { image } => {
+                        let i = game_state
+                            .lock()
+                            .unwrap()
+                            .sendable
+                            .get_player_mut(&login_name)
+                            .add_drawing(&mut image.clone());
+                        let _ = gtx.send(
+                            serde_json::to_string(&packets::Outgoing::Image {
+                                username: login_name.clone(),
+                                image: game_state
+                                .lock()
+                                .unwrap()
+                                .sendable
+                                .get_player_mut(&login_name).slice(i),
+                                i
+                            })
+                            .unwrap(),
+                        );
+                    }
+                    packets::Incoming::Pull { i , username } => {
+                    let _ = tx.send(
+                        serde_json::to_string(&packets::Outgoing::Image {
+                            username: username.clone(),
+                            image: game_state
+                            .lock()
+                            .unwrap()
+                            .sendable
+                            .get_player_mut(&username).slice(i),
+                            i: i
+                        })
+                        .unwrap(),
+                    );
+                    },
+                    packets::Incoming::Undo { i } => {
                         game_state
                             .lock()
                             .unwrap()
                             .sendable
                             .get_player_mut(&login_name)
-                            .set_drawing(image.clone());
+                            .undo(i);
                         let _ = gtx.send(
-                            serde_json::to_string(&packets::Outgoing::Image {
-                                username: login_name.clone(),
-                                image,
+                            serde_json::to_string(&packets::Outgoing::Undo {
+                                username: login_name.clone()
                             })
                             .unwrap(),
                         );
-                    }
+                    },
                 }
             }
         }

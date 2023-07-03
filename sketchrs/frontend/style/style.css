@@ -71,16 +71,20 @@
     opacity: 0.5;
 }
 
-.user-list-item[selected="true"] {
+#user-list-2>.user-list-item[selected="true"] {
     background-color: rgb(187, 191, 137);
 }
 
-.user-list-item[me="true"] {
+#user-list-2>.user-list-item[me="true"] {
     background-color: rgb(197, 241, 167);
 }
 
-.user-list-item[me="true"][selected="true"] {
+#user-list-2>.user-list-item[me="true"][selected="true"] {
     background-color: rgb(195, 241, 139);
+}
+
+#user-list-3>.user-list-item{
+    transition: width 2.0s ease;
 }
 
 #game {

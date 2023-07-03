@@ -18,10 +18,10 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(timelimit: i32, maxpoints: i32) -> Self {
         Self {
             peer_map: HashMap::new(),
-            sendable: packets::State::new(),
+            sendable: packets::State::new(timelimit, maxpoints),
             words: HashMap::new(),
             word_pool: Vec::new(),
             host: None,
@@ -40,10 +40,10 @@ impl State {
             tx.send(message.clone()).unwrap_or(0);
         }
     }
-    fn guess(&mut self, guesser: &String, guess: &String) -> Option<i32> {
+    fn guess(&mut self, guesser: &String, guess: &String) -> Option<(i32, String)> {
         for (drawer, word) in &self.words {
             if word == guess && drawer != guesser {
-                return Some(self.sendable.guess(drawer, guesser));
+                return Some((self.sendable.guess(drawer, guesser), drawer.clone()));
             }
         }
         None
@@ -178,11 +178,11 @@ pub async fn handle(
                         .unwrap_or(0);
                     }
                     packets::Incoming::Guess { guess } => {
-                        if let Some(time) = game_state.lock().unwrap().guess(&login_name, &guess) {
+                        if let Some((time, drawer)) = game_state.lock().unwrap().guess(&login_name, &guess) {
                             let _ = gtx.send(
                                 serde_json::to_string(&packets::Outgoing::Guess {
                                     username: "".into(),
-                                    guess: format!("{} guessed a word at {}!", &login_name, time)
+                                    guess: format!("{} guessed {}'s word for {} points!", &login_name, drawer, time)
                                         .to_string(),
                                 })
                                 .unwrap(),

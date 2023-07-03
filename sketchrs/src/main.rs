@@ -22,7 +22,7 @@ struct Query {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cliargs = args::Args::parse();
-    let mut inner_game_state = game::State::new();
+    let mut inner_game_state = game::State::new(cliargs.timelimit, cliargs.maxpoints);
     inner_game_state.add_words(read_words(&cliargs.words)?);
     let game_state: game::GameState = Arc::new(Mutex::new(inner_game_state));
 

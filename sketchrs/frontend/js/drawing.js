@@ -152,6 +152,7 @@ function onload_drawing() {
         strokes = strks.map(x => JSON.parse(x));
     }
 
+   
 
     $('#canvas').on('touchstart mousedown', touch);
     $('#canvas').on('touchmove mousemove', untouch);

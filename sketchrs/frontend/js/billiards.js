@@ -12,6 +12,19 @@ var lastStroke = 0;
 var gUndo = null;
 var gstrks = null;
 var repull = true;
+var gameover = false; 
+
+function reset() {
+    gMap = new Map();
+    gStrokes = new Map();
+    gMapLobby = new Map();
+    gAssign = null;
+    gState = null;
+    lastStroke = 0;
+    gstrks = null;
+    repull = true;
+    gameover = false; 
+}
 
 function onload_billiards() {
     
@@ -31,7 +44,9 @@ function onload_billiards() {
             const message = event.data;
             console.log('Received message:', message);
             let data = JSON.parse(message);
-            if (data["Guess"]) {
+            if (data["Reset"]) {
+                reset();
+            } else if (data["Guess"]) {
                 let chat = document.getElementById('answers');
                 let line = document.createElement("div");
                 if (data["Guess"]["username"] === "") {
@@ -103,29 +118,68 @@ function onload_billiards() {
     function tick(state) {
         gState = state;
         console.log(state)
+        let timer = document.getElementById("timer");
         if (state["state"] == "RUNNING") {
             document.getElementById("progress-container").style.display = "flex";
             document.getElementById("lobby-container").style.display = "none";
             document.getElementById("endgame-container").style.display = "none";
+            timer.style.display = "block";
+            timer.value = state["time"];
+            timer.max = state["timelimit"];
             on_visible();
         } else if (state["state"] == "LOBBY") {
+            gameover = false;
             document.getElementById("progress-container").style.display = "none";
             document.getElementById("lobby-container").style.display = "block";
             document.getElementById("endgame-container").style.display = "none";
+            timer.style.display = "none";
         } else if (state["state"] == "POSTGAME") {
             document.getElementById("progress-container").style.display = "none";
             document.getElementById("lobby-container").style.display = "none";
             document.getElementById("endgame-container").style.display = "block";
+            timer.style.display = "none";
+            show_winners();
+        }
+    }
+
+    function show_winners() {
+        if (gameover) {
+            return;
+        }
+        gameover = true;
+        console.log(Object.entries(gState["players"]));
+        let namelist = document.getElementById("user-list-3");
+        let values = Object.entries(gState["players"]);
+        let highscore = Math.max(...values.map(x => x[1].score));
+        console.log(highscore);
+        for (let i = 0; i < values.length; ++i) {
+            setTimeout(function() {
+                let player = values[i][0];
+                let child = add_player(player);
+                child.style.width = "10%";
+                namelist.appendChild(child);
+                child.textContent = player + " [0]";
+                setTimeout(function() {
+                child.style.width = (10 + (gState["players"][player]["score"] * 80 / highscore)) + "%";
+                var tally = 0;
+                var myInterval = setInterval(function(){
+                    tally += Math.ceil(gState["players"][player]["score"] / 80);
+                    if (tally >= gState["players"][player]["score"]) {
+                        tally = gState["players"][player]["score"];
+                        clearInterval(myInterval);
+                    }
+                    child.textContent = player + " ["+tally+"]";
+               }, 16);
+                }, 1000);
+            }, i * 3000);
         }
     }
 
     function get_namelist(state) {
         if (state["state"] == "RUNNING") {
             return document.getElementById("user-list-1");
-        } else if (state["state"] == "LOBBY") {
+        } else {
             return document.getElementById("user-list-2");
-        } else if (state["state"] == "POSTGAME") {
-            return document.getElementById("user-list-3");
         }
     }
     
@@ -272,4 +326,10 @@ function onload_billiards() {
         redraw_other(current_view().getContext("2d"), gstrks);
         redraw();
     };
+    setInterval(function(){
+        if (gState && gState["state"] == "RUNNING") {
+            let timer = document.getElementById("timer");
+            timer.value += 1;
+        }
+    }, 1000);
 }

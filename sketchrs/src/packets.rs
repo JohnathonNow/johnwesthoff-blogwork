@@ -22,14 +22,18 @@ pub struct State {
     players: HashMap<String, PlayerState>,
     state: GameState,
     time: i32,
+    timelimit: i32,
+    maxpoints: i32,
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(timelimit: i32, maxpoints: i32) -> Self {
         Self {
             players: HashMap::new(),
             state: GameState::LOBBY,
             time: 0,
+            timelimit,
+            maxpoints,
         }
     }
     pub fn get_player_mut(&mut self, name: &String) -> &mut PlayerState {
@@ -74,11 +78,17 @@ impl State {
         }
     }
     pub fn guess(&mut self, drawer: &String, guesser: &String) -> i32 {
-        let time = self.time;
+        let points = if self.time >= self.timelimit {
+            0
+        } else {
+            (((self.timelimit / self.maxpoints) + self.timelimit - self.time) * self.maxpoints) / self.timelimit
+        };
         let player = self.get_player_mut(drawer);
         if let None = player.guess_list.get(guesser) {
-            player.guess_list.insert(guesser.clone(), time);
-            self.time
+            player.guess_list.insert(guesser.clone(), points);
+            player.score += points;
+            self.get_player_mut(guesser).score += points;
+            points
         } else {
             0
         }

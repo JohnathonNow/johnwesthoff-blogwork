@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
+use strsim;
 
 pub type GameState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
@@ -40,9 +41,13 @@ impl State {
             tx.send(message.clone()).unwrap_or(0);
         }
     }
+    fn guess_is_good(&self, guess: &str, word: &str) -> bool {
+        let distance = strsim::levenshtein(&guess.to_lowercase(), &word.to_lowercase());
+        return distance <= guess.len().min(word.len()) / 5
+    }
     fn guess(&mut self, guesser: &String, guess: &String) -> Option<(i32, String)> {
         for (drawer, word) in &self.words {
-            if word == guess && drawer != guesser {
+            if self.guess_is_good(&*guess, &*word) && drawer != guesser {
                 return Some((self.sendable.guess(drawer, guesser), drawer.clone()));
             }
         }

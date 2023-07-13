@@ -12,7 +12,7 @@ var lastStroke = 0;
 var gUndo = null;
 var gstrks = null;
 var repull = true;
-var gameover = false; 
+var gameover = false;
 
 function reset() {
     gMap = new Map();
@@ -23,14 +23,14 @@ function reset() {
     lastStroke = 0;
     gstrks = null;
     repull = true;
-    gameover = false; 
+    gameover = false;
 }
 
 function onload_billiards() {
-    
+
     function connect() {
         console.log("PLANETARY (GO!)")
-        socket = new WebSocket('ws://' + window.location.hostname + ':'+ window.location.port +'/chat?name=' + encodeURIComponent(gName));
+        socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName));
         //socket = new WebSocket('ws://' + window.location.hostname + ':3030/chat');
         console.log(socket)
         // Event listener for when the WebSocket connection is established
@@ -56,7 +56,7 @@ function onload_billiards() {
                     line.append(msg, document.createElement("br"));
                 } else {
                     let user = document.createElement("b");
-                    user.textContent = data["Guess"]["username"]  + ": ";
+                    user.textContent = data["Guess"]["username"] + ": ";
                     line.append(user, data["Guess"]["guess"], document.createElement("br"));
                 }
                 chat.append(line);
@@ -77,7 +77,7 @@ function onload_billiards() {
                 }
             } else if (data["Undo"]) {
                 undo_other(data["Undo"]["username"]);
-            } else if (data["Assign"]) { 
+            } else if (data["Assign"]) {
                 gAssign = data["Assign"]["assignment"];
                 document.getElementById("word").textContent = "Your word is " + gAssign;
             } else if (data["FullState"]) {
@@ -87,7 +87,9 @@ function onload_billiards() {
                     let player = data["FullState"]["state"]["players"][p];
                     let nametag = add_player(p);
                     nametag.setAttribute("active", player["active"]);
-                    namelist.append(nametag);
+                    if (!gameover) {
+                        namelist.append(nametag);
+                    }
                     if (p == gName) {
                         nametag.setAttribute("me", true);
                     }
@@ -153,23 +155,30 @@ function onload_billiards() {
         let highscore = Math.max(...values.map(x => x[1].score));
         console.log(highscore);
         for (let i = 0; i < values.length; ++i) {
-            setTimeout(function() {
+            setTimeout(function () {
                 let player = values[i][0];
                 let child = add_player(player);
                 child.style.width = "10%";
                 namelist.appendChild(child);
                 child.textContent = player + " [0]";
-                setTimeout(function() {
-                child.style.width = (10 + (gState["players"][player]["score"] * 80 / highscore)) + "%";
-                var tally = 0;
-                var myInterval = setInterval(function(){
-                    tally += Math.ceil(gState["players"][player]["score"] / 80);
-                    if (tally >= gState["players"][player]["score"]) {
-                        tally = gState["players"][player]["score"];
-                        clearInterval(myInterval);
-                    }
-                    child.textContent = player + " ["+tally+"]";
-               }, 16);
+                if (gState["players"][player]["score"] == highscore) {
+                    child.setAttribute("winner", "true");
+                }
+                child.setAttribute("moving", "true");
+                setTimeout(function () {
+                    child.style.width = (10 + (gState["players"][player]["score"] * 80 / highscore)) + "%";
+                    var tally = 0;
+                    var myInterval = setInterval(function () {
+                        tally += Math.ceil(gState["players"][player]["score"] / 80);
+                        if (tally >= gState["players"][player]["score"]) {
+                            tally = gState["players"][player]["score"];
+                            clearInterval(myInterval);
+                        }
+                        child.textContent = player + " [" + tally + "]";
+                    }, 16);
+                    setTimeout(function () {
+                        child.setAttribute("moving", "false");
+                    }, 500);
                 }, 1000);
             }, i * 3000);
         }
@@ -182,11 +191,11 @@ function onload_billiards() {
             return document.getElementById("user-list-2");
         }
     }
-    
-    gUndo = function(qty) {
+
+    gUndo = function (qty) {
         //lastStroke -= 2;
         lastStroke = strokes.length;
-        socket.send(JSON.stringify({ "Undo": { "i": qty} }));
+        socket.send(JSON.stringify({ "Undo": { "i": qty } }));
     }
 
     function add_player(player) {
@@ -201,7 +210,7 @@ function onload_billiards() {
         let nametag = gMapLobby.get(player);
         return nametag;
     }
-    
+
     function player_click(e) {
         if (gState["state"] == "RUNNING") {
             for (let p of gMap.values()) {
@@ -224,8 +233,8 @@ function onload_billiards() {
     }
 
     function current_view(e) {
-       for (e of document.getElementsByClassName("image")) {
-            if (e.style.display != "none") { 
+        for (e of document.getElementsByClassName("image")) {
+            if (e.style.display != "none") {
                 return e;
             }
         }
@@ -269,11 +278,11 @@ function onload_billiards() {
 
     function start() {
         console.log("GO!");
-        socket.send(JSON.stringify({ "Start": {  } }));
+        socket.send(JSON.stringify({ "Start": {} }));
     }
 
     function sendAssign() {
-        socket.send(JSON.stringify({ "Assign": { } }));
+        socket.send(JSON.stringify({ "Assign": {} }));
     }
 
     function sendGuess(g) {
@@ -310,8 +319,8 @@ function onload_billiards() {
         }
     });
 
-    document.onmouseup = function(){document.getElementById("guess").focus();};
-    
+    document.onmouseup = function () { document.getElementById("guess").focus(); };
+
     document.getElementById("start").onclick = function search(e) {
         start();
     };
@@ -321,12 +330,14 @@ function onload_billiards() {
     if (document.cookie != "") {
         document.getElementById("name").value = document.cookie;
     }
-    window.onresize = function(){
-        see_element(current_view());
-        redraw_other(current_view().getContext("2d"), gstrks);
-        redraw();
+    window.onresize = function () {
+        try {
+            see_element(current_view());
+            redraw_other(current_view().getContext("2d"), gstrks);
+            redraw();
+        } catch { }
     };
-    setInterval(function(){
+    setInterval(function () {
         if (gState && gState["state"] == "RUNNING") {
             let timer = document.getElementById("timer");
             timer.value += 1;

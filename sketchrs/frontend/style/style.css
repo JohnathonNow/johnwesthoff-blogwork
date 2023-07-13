@@ -82,19 +82,35 @@ input {
     opacity: 0.5;
 }
 
+.user-list-item[winner="true"]::after {
+    content: "🏆";
+    position: absolute;
+    transform: translateX(0.2rem);
+    transition: all 3s;
+}
+
+
+.user-list-item[winner="true"][moving="true"]::after {
+    content: "🏆";
+    position: absolute;
+    transform: translateX(110vw);
+    transition: all 3s;
+}
+
+
 .user-list-item[active="false"] {
     opacity: 0.5;
 }
 
-#user-list-2>.user-list-item[selected="true"] {
+#user-list-1>.user-list-item[selected="true"] {
     background-color: rgb(187, 191, 137);
 }
 
-#user-list-2>.user-list-item[me="true"] {
+.user-list-item[me="true"] {
     background-color: rgb(197, 241, 167);
 }
 
-#user-list-2>.user-list-item[me="true"][selected="true"] {
+#user-list-1>.user-list-item[me="true"][selected="true"] {
     background-color: rgb(195, 241, 139);
 }
 

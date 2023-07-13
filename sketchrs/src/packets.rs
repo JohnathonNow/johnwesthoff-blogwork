@@ -86,7 +86,7 @@ impl State {
         let player = self.get_player_mut(drawer);
         if let None = player.guess_list.get(guesser) {
             player.guess_list.insert(guesser.clone(), points);
-            player.score += points;
+            player.score += points / 5;
             self.get_player_mut(guesser).score += points;
             points
         } else {

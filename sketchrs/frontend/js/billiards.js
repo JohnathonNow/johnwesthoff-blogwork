@@ -32,6 +32,7 @@ function reset() {
     document.getElementById("user-list-2").innerHTML = "";
     document.getElementById("user-list-1").innerHTML = "";
     gMap.set(gName, document.getElementById("canvas"));
+    clear_canvas();
 }
 
 

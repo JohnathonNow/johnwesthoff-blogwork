@@ -1,35 +1,41 @@
-var gDrawer = null
+const MAX_CHAT = 30;
+
 var gName = null;
-var gImageV = 0;
-var gGuessV = 0;
 var socket = null;
 var gMap = new Map();
-var gStrokes = new Map();
-var gMapLobby = new Map();
+var gStrokes = null;
+var gMapLobby = null;
 var gAssign = null;
 var gState = null;
 var lastStroke = 0;
-var gUndo = null;
+var gUndo = null; // function
 var gstrks = null;
 var repull = true;
 var gameover = false;
+var gImgMap = new Map();
+var gMyGuessers = null;
+var gMyGuesses = null;
+
 
 function reset() {
-    gMap = new Map();
     gStrokes = new Map();
     gMapLobby = new Map();
+    gMyGuessers = new Map();
+    gMyGuesses = new Map();
     gAssign = null;
     gState = null;
     lastStroke = 0;
     gstrks = null;
     repull = true;
     gameover = false;
+    document.getElementById("user-list-3").innerHTML = "";
+    gMap.set(gName, document.getElementById("canvas"));
 }
 
-function onload_billiards() {
 
+function onload_billiards() {
     function connect() {
-        console.log("PLANETARY (GO!)")
+        reset();
         socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName));
         //socket = new WebSocket('ws://' + window.location.hostname + ':3030/chat');
         console.log(socket)
@@ -42,10 +48,22 @@ function onload_billiards() {
         // Event listener for incoming messages from the server
         socket.addEventListener('message', event => {
             const message = event.data;
-            console.log('Received message:', message);
+            console.log(message);
             let data = JSON.parse(message);
             if (data["Reset"]) {
                 reset();
+            } else if (data["Guessed"]) {
+                let chat = document.getElementById('answers');
+                let line = document.createElement("div");
+                let msg = document.createElement("b");
+                msg.classList = "warn";
+                msg.textContent = data["Guessed"]["guesser"] + " guessed " + data["Guessed"]["drawer"] + "'s word for " + data["Guessed"]["points"] + " points!";
+                line.append(msg, document.createElement("br"));
+                chat.append(line);
+                while (chat.children.length > MAX_CHAT) {
+                    chat.removeChild(chat.children[0]);
+                }
+                chat.scrollTop = chat.scrollHeight;
             } else if (data["Guess"]) {
                 let chat = document.getElementById('answers');
                 let line = document.createElement("div");
@@ -60,12 +78,11 @@ function onload_billiards() {
                     line.append(user, data["Guess"]["guess"], document.createElement("br"));
                 }
                 chat.append(line);
-                while (chat.children.length > 30) {
+                while (chat.children.length > MAX_CHAT) {
                     chat.removeChild(chat.children[0]);
                 }
                 chat.scrollTop = chat.scrollHeight;
             } else if (data["Image"]) {
-                console.log("EEEEE: " + data["Image"]["i"]);
                 add_drawing(data["Image"]["username"], data["Image"]["image"])
                 if (data["Image"]["username"] != gName && data["Image"]["i"] < gStrokes.get(data["Image"]["username"]).length) {
                     socket.send(JSON.stringify({ "Pull": { "username": data["Image"]["username"], i: gStrokes.get(data["Image"]["username"]).length } }));
@@ -81,9 +98,12 @@ function onload_billiards() {
                 gAssign = data["Assign"]["assignment"];
                 document.getElementById("word").textContent = "Your word is " + gAssign;
             } else if (data["FullState"]) {
+                if (gameover && data["FullState"]["state"]["state"] == "LOBBY") {
+                    console.log("NUKED!");
+                    reset();
+                }
                 let namelist = get_namelist(data["FullState"]["state"]);
                 for (var p in data["FullState"]["state"]["players"]) {
-                    console.log("DOING " + p);
                     let player = data["FullState"]["state"]["players"][p];
                     let nametag = add_player(p);
                     nametag.setAttribute("active", player["active"]);
@@ -112,14 +132,12 @@ function onload_billiards() {
 
         // Event listener for WebSocket connection closure
         socket.addEventListener('close', event => {
-            console.log('Disconnected from chat server');
             setTimeout(connect, 4000);
         });
     }
 
     function tick(state) {
         gState = state;
-        console.log(state)
         let timer = document.getElementById("timer");
         if (state["state"] == "RUNNING") {
             document.getElementById("progress-container").style.display = "flex";
@@ -142,6 +160,10 @@ function onload_billiards() {
             timer.style.display = "none";
             show_winners();
         }
+        if (gName == state["host"]) {
+            document.getElementById("start").style.display = "block";
+            document.getElementById("restart").style.display = "block";
+        }
     }
 
     function show_winners() {
@@ -149,17 +171,32 @@ function onload_billiards() {
             return;
         }
         gameover = true;
-        console.log(Object.entries(gState["players"]));
         let namelist = document.getElementById("user-list-3");
         let values = Object.entries(gState["players"]);
         let highscore = Math.max(...values.map(x => x[1].score));
-        console.log(highscore);
         for (let i = 0; i < values.length; ++i) {
             setTimeout(function () {
                 let player = values[i][0];
                 let child = add_player(player);
                 child.style.width = "10%";
                 namelist.appendChild(child);
+                try {
+                    let image = document.createElement("div");
+                    image.classList = "finalimagecontainer";
+                    let picture = document.createElement("img");
+                    gstrks = gStrokes.get(player);
+                    if (gstrks) {
+                        redraw_other(gMap.get(player).getContext("2d"), gstrks);
+                    }
+                    picture.src = gMap.get(player).toDataURL();
+                    image.onclick = function() {
+                        picture.src = gMap.get(player).toDataURL();
+                        Array.prototype.forEach.call(document.getElementsByClassName("finalimagecontainer"), d=>d.style.display = "none");
+                    };
+                    image.appendChild(picture);
+                    document.getElementById("finalgallery").appendChild(image);
+                    gImgMap.set(player, image);
+                } catch (e) {console.log(e)}
                 child.textContent = player + " [0]";
                 if (gState["players"][player]["score"] == highscore) {
                     child.setAttribute("winner", "true");
@@ -215,7 +252,6 @@ function onload_billiards() {
         if (gState["state"] == "RUNNING") {
             for (let p of gMap.values()) {
                 p.style.display = "none";
-                console.log(p);
             }
             for (let p of gMapLobby.values()) {
                 p.setAttribute("selected", "false");
@@ -229,6 +265,32 @@ function onload_billiards() {
             }
             redraw();
             gMapLobby.get(e.target.getAttribute("__player")).setAttribute("selected", "true");
+        } else if (gState["state"] == "POSTGAME") {
+            gImgMap.get(e.target.getAttribute("__player")).style.display = "block";
+            gImgMap.get(e.target.getAttribute("__player")).querySelector("img").style.display = "block";
+
+        }
+    }
+
+    function cycle() {
+        if (gState["state"] == "RUNNING") {
+            let e = document.querySelector(".user-list-item[selected=\"true\"] + li") || document.querySelector("li.user-list-item:nth-child(1)");
+            console.log(e);
+            for (let p of gMap.values()) {
+                p.style.display = "none";
+            }
+            for (let p of gMapLobby.values()) {
+                p.setAttribute("selected", "false");
+            }
+            let can = gMap.get(e.getAttribute("__player"));
+            gstrks = gStrokes.get(e.getAttribute("__player"));
+            can.style.display = "block";
+            see_element(can);
+            if (gstrks) {
+                redraw_other(can.getContext("2d"), gstrks);
+            }
+            redraw();
+            gMapLobby.get(e.getAttribute("__player")).setAttribute("selected", "true");
         }
     }
 
@@ -266,7 +328,6 @@ function onload_billiards() {
             newCanvas.classList = "image";
             document.getElementById("gallery").appendChild(newCanvas);
         }
-        console.log("AAAAAAA: " + gStrokes.get(drawer).length);
         let strks = gStrokes.get(drawer).concat(image.map(x => JSON.parse(x)));
         gStrokes.set(drawer, strks);
         let canvas = gMap.get(drawer);
@@ -277,8 +338,11 @@ function onload_billiards() {
     }
 
     function start() {
-        console.log("GO!");
         socket.send(JSON.stringify({ "Start": {} }));
+    }
+
+    function restart() {
+        socket.send(JSON.stringify({ "Restart": {} }));
     }
 
     function sendAssign() {
@@ -307,15 +371,17 @@ function onload_billiards() {
             gName = $('#name').val();
             $('#game').show();
             $('#login').hide();
-            gMap.set(gName, document.getElementById("canvas"));
             connect();
             document.cookie = gName;
         }
     });
     $("#guess").on("keydown", function search(e) {
-        if (e.keyCode == 13) {
+        if (e.keyCode == 13) { //enter
             sendGuess($('#guess').val());
             $('#guess').val('');
+        } else if (e.keyCode == 9) { //tab
+            cycle();
+            e.preventDefault();
         }
     });
 
@@ -323,6 +389,9 @@ function onload_billiards() {
 
     document.getElementById("start").onclick = function search(e) {
         start();
+    };
+    document.getElementById("restart").onclick = function search(e) {
+        restart();
     };
     document.getElementById("progress-container").style.display = "none";
     document.getElementById("lobby-container").style.display = "none";

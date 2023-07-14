@@ -41,7 +41,6 @@ function onload_drawing() {
     mode = DRAW_MODE;
     var touch = function(e){
         e.preventDefault();
-        //if (gDrawer !== gName) return;
 
         TRACEBACK = 0;
         paint = true;
@@ -126,9 +125,6 @@ function onload_drawing() {
     }
 
     redraw_other = function(ctx, stks){
-        //if (gDrawer !== gName) {
-        //    return;
-        //}
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.lineJoin = "round";
                 

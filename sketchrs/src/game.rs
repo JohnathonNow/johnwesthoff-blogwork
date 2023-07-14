@@ -15,7 +15,6 @@ pub struct State {
     sendable: packets::State,
     words: Words,
     word_pool: Vec<String>,
-    host: Option<String>,
 }
 
 impl State {
@@ -25,7 +24,6 @@ impl State {
             sendable: packets::State::new(timelimit, maxpoints),
             words: HashMap::new(),
             word_pool: Vec::new(),
-            host: None,
         }
     }
     fn broadcast_state(&self) {
@@ -53,8 +51,11 @@ impl State {
         }
         None
     }
+    fn restart(&mut self) {
+        self.sendable.restart();
+        self.words = HashMap::new();
+    }
     fn assign_all(&mut self) {
-        println!("{:?}", self.word_pool);
         for (p, tx) in self.peer_map.iter() {
             let word = if let Some(x) = self.words.get(p) {
                 x.clone()
@@ -72,7 +73,6 @@ impl State {
             )
             .unwrap_or(0);
         }
-        println!("{:?}", self.words);
     }
     fn assign_word(&mut self, drawer: &String) -> String {
         if let Some(x) = self.words.get(drawer) {
@@ -111,15 +111,12 @@ pub async fn handle(
 
     {
         let mut gs = game_state.lock().unwrap();
-        if gs.host.is_none() {
-            gs.host = Some(login_name.clone());
-        }
+        gs.sendable.set_host(&login_name);
         gs.peer_map.insert(login_name.clone(), tx.clone());
         drop(gs);
     }
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
 
-    println!("USER {} CONNECTED!", login_name);
     tokio::task::spawn(async move {
         game_state
             .lock()
@@ -150,19 +147,31 @@ pub async fn handle(
                 continue;
             };
 
-            println!("GOT MESSAGE {}!", message);
+            println!("{}: {}", &login_name, message);
             if let Ok(packet) = serde_json::from_str::<packets::Incoming>(&message) {
-                println!("MainLoop: It's {:?}!", packet);
                 match packet {
                     packets::Incoming::Start {} => {
                         let mut gs = game_state.lock().unwrap();
-                        if let Some(host) = &gs.host {
-                            println!("{} - {}", host, login_name);
+                        if let Some(host) = gs.sendable.get_host() {
                             if host == &login_name {
                                 gs.sendable.set_state(packets::GameState::RUNNING);
                             }
                         }
                         gs.assign_all();
+                        let _ = gtx.send(
+                            serde_json::to_string(&packets::Outgoing::FullState {
+                                state: &gs.sendable,
+                            })
+                            .unwrap(),
+                        );
+                    }
+                    packets::Incoming::Restart {} => {
+                        let mut gs = game_state.lock().unwrap();
+                        if let Some(host) = gs.sendable.get_host() {
+                            if host == &login_name {
+                                gs.restart();
+                            }
+                        }
                         let _ = gtx.send(
                             serde_json::to_string(&packets::Outgoing::FullState {
                                 state: &gs.sendable,
@@ -185,10 +194,10 @@ pub async fn handle(
                     packets::Incoming::Guess { guess } => {
                         if let Some((time, drawer)) = game_state.lock().unwrap().guess(&login_name, &guess) {
                             let _ = gtx.send(
-                                serde_json::to_string(&packets::Outgoing::Guess {
-                                    username: "".into(),
-                                    guess: format!("{} guessed {}'s word for {} points!", &login_name, drawer, time)
-                                        .to_string(),
+                                serde_json::to_string(&packets::Outgoing::Guessed {
+                                    drawer,
+                                    guesser: login_name.clone(),
+                                    points: time,
                                 })
                                 .unwrap(),
                             );

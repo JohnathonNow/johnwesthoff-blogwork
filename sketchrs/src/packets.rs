@@ -7,6 +7,7 @@ pub enum Incoming {
     Pull { i: i32, username: String },
     Assign {},
     Start {},
+    Restart {},
     Undo { i: i32 },
 }
 
@@ -21,6 +22,7 @@ pub enum GameState {
 pub struct State {
     players: HashMap<String, PlayerState>,
     state: GameState,
+    host: Option<String>,
     time: i32,
     timelimit: i32,
     maxpoints: i32,
@@ -32,8 +34,24 @@ impl State {
             players: HashMap::new(),
             state: GameState::LOBBY,
             time: 0,
+            host: None,
             timelimit,
             maxpoints,
+        }
+    }
+    pub fn restart(&mut self) {
+        self.set_state(GameState::LOBBY);
+        self.time = 0;
+        for (_name, p) in self.players.iter_mut() {
+            p.restart();
+        }
+    }
+    pub fn get_host(&self) -> Option<&String> {
+        self.host.as_ref().map(|x| x)
+    }
+    pub fn set_host(&mut self, new_host: &str) {
+        if self.host.is_none() {
+            self.host = Some(new_host.to_string());
         }
     }
     pub fn get_player_mut(&mut self, name: &String) -> &mut PlayerState {
@@ -101,7 +119,6 @@ pub struct PlayerState {
     #[serde(skip_serializing)]
     drawing: Vec<String>,
     score: i32,
-    #[serde(skip_serializing)]
     guess_list: HashMap<String, i32>,
     /*#[serde(skip_serializing)]
     word: String,*/
@@ -116,6 +133,11 @@ impl PlayerState {
             guess_list: HashMap::new(),
             //word: "".into(),
         }
+    }
+    pub fn restart(&mut self) {
+        self.drawing = Vec::new();
+        self.guess_list = HashMap::new();
+        self.score = 0;
     }
     pub fn set_active(&mut self, active: bool) {
         self.active = active
@@ -139,6 +161,11 @@ pub enum Outgoing<'a> {
     Guess {
         username: String,
         guess: String,
+    },
+    Guessed {
+        guesser: String,
+        drawer: String,
+        points: i32,
     },
     Image {
         username: String,

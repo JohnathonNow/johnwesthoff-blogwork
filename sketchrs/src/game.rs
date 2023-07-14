@@ -116,8 +116,9 @@ pub async fn handle(
         let pm: &mut packets::PlayerState = gs.sendable.get_player_mut(&login_name);
         if pm.is_active() {
             die = true;
+        } else {
+            gs.peer_map.insert(login_name.clone(), tx.clone());
         }
-        gs.peer_map.insert(login_name.clone(), tx.clone());
     }
 
     if die {

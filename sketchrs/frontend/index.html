@@ -14,7 +14,7 @@
     <div id="login" align="center">
         <h3 class="full">Login</h3>
         <div class="flex">
-            <div class="full"> Enter your name: </div> <input type="text" class="full" name="FirstName" id="name" value="">
+            <div class="full"> Enter your name: </div> <input type="text" class="full" maxlength="24" name="FirstName" id="name" value="">
         </div>
     </div>
     <div align="center" id="game">
@@ -55,7 +55,7 @@
                 <button id="restart" style="display: none;">Restart</button>
             </div>
             <div id="answerscontainer">
-                <div id="dummy"> <input type="text" name="FirstName" id="guess" value="" placeholder="Guess or chat:"> </div>
+                <div id="dummy"> <input type="text" name="FirstName" id="guess" value="" placeholder="Guess or chat:" maxlength="256"> </div>
                 <div id="answers"> </div>
             </div>
             <div id="finalgallery"></div>

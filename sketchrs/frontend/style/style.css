@@ -66,6 +66,8 @@ input {
 
 #answerscontainer {
     flex: 45%;
+    word-wrap: break-word;
+    overflow-x: hidden;
 }
 
 #dummy {

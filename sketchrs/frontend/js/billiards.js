@@ -26,7 +26,7 @@ function reset() {
     gState = null;
     lastStroke = 0;
     gstrks = null;
-    repull = true;
+    repull = false;
     gameover = false;
     document.getElementById("user-list-3").innerHTML = "";
     document.getElementById("user-list-2").innerHTML = "";
@@ -137,8 +137,8 @@ function onload_billiards() {
                 if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                     sendAssign();
                 }
-                for ([player, strokes] of gStrokes) {
-                    socket.send(JSON.stringify({ "Pull": { "username": player, i: strokes.length } }));
+                for ([player, istrokes] of gStrokes) {
+                    socket.send(JSON.stringify({ "Pull": { "username": player, i: istrokes.length } }));
                 }
             }
         });

@@ -108,23 +108,27 @@ pub async fn handle(
     login_name: String,
 ) {
     let (tx, mut _rx) = broadcast::channel::<String>(100);
+    let (mut user_ws_tx, mut user_ws_rx) = ws.split();
+    let mut die = false;
     {
         let mut gs = game_state.lock().unwrap();
         gs.sendable.set_host(&login_name);
         let pm: &mut packets::PlayerState = gs.sendable.get_player_mut(&login_name);
         if pm.is_active() {
-            let _ = tx.send(
-                serde_json::to_string(&packets::Outgoing::NewName {
-                    new_name: login_name.clone()
-                })
-                .unwrap(),
-            );
-        } else {
-            gs.peer_map.insert(login_name.clone(), tx.clone());
+            die = true;
         }
-        drop(gs);
+        gs.peer_map.insert(login_name.clone(), tx.clone());
     }
-    let (mut user_ws_tx, mut user_ws_rx) = ws.split();
+
+    if die {
+        let _ = user_ws_tx.send(Message::text(
+            serde_json::to_string(&packets::Outgoing::NewName {
+                new_name: login_name.clone(),
+            })
+            .unwrap(),
+        )).await;
+        return;
+    }
 
     tokio::task::spawn(async move {
         {

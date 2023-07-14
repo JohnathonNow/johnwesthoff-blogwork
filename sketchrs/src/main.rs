@@ -1,4 +1,4 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 use std::fs;
@@ -43,7 +43,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .and(with_game_state(game_state.clone()))
         .and(with_broadcast(tx.clone()))
         .map(|query: Query, ws: warp::ws::Ws, peer_map, tx| {
-            println!("{}!!!!", query.name);
             ws.on_upgrade(move |socket| game::handle(socket, peer_map, tx, query.name))
         });
 

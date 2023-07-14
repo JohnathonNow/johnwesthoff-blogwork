@@ -4,6 +4,20 @@
     display: inline-block;
 }
 
+body{
+    overflow-x:hidden;
+}
+
+#colorpicker {
+    display: inline-block;
+    width: 90%;
+    padding: 0;
+}
+#size {
+    display: inline-block;
+    width: 90%;
+    padding: 0;
+}
 input {
 	display: block;
 	width: 100%;
@@ -107,6 +121,38 @@ input {
     opacity: 0.5;
 }
 
+
+
+#user-list-1>.user-list-item[guessed="true"]::after {
+    content: "✔️";
+    position: absolute;
+    transform: translateX(0.2rem);
+    transition: all 1s;
+}
+
+
+#user-list-1>.user-list-item[guessed="true"][movingguessed="true"]::after {
+    content: "✔️";
+    position: absolute;
+    transform: translateX(110vw);
+    transition: all 1s;
+}
+
+#user-list-1>.user-list-item[guesser="true"]::before {
+    content: "✏️";
+    position: absolute;
+    transform: translateX(-1.2rem);
+    transition: all 1s;
+}
+
+
+#user-list-1>.user-list-item[guesser="true"][movingguesser="true"]::before {
+    content: "✏️";
+    position: absolute;
+    transform: translateX(-10vw);
+    transition: all 1s;
+}
+
 .user-list-item[winner="true"]::after {
     content: "🏆";
     position: absolute;
@@ -121,7 +167,6 @@ input {
     transform: translateX(110vw);
     transition: all 3s;
 }
-
 
 .user-list-item[active="false"] {
     opacity: 0.5;

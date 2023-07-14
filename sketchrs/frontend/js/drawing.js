@@ -12,7 +12,7 @@ function clear_canvas() {
 
 function see_element(element) {
     /*$('#answers').css("max-height", $('#answers').height()+"px");*/
-    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*4 - element.getBoundingClientRect().top;
+    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*1.5 - element.getBoundingClientRect().top;
     
     $(element).height(mw);
     $(element).width(mw);

@@ -29,6 +29,8 @@ function reset() {
     repull = true;
     gameover = false;
     document.getElementById("user-list-3").innerHTML = "";
+    document.getElementById("user-list-2").innerHTML = "";
+    document.getElementById("user-list-1").innerHTML = "";
     gMap.set(gName, document.getElementById("canvas"));
 }
 
@@ -52,6 +54,9 @@ function onload_billiards() {
             let data = JSON.parse(message);
             if (data["Reset"]) {
                 reset();
+            } else if (data["NewName"]) {
+                alert("Name " + gName + " is taken! Try again!");
+                location.reload();
             } else if (data["Guessed"]) {
                 let chat = document.getElementById('answers');
                 let line = document.createElement("div");
@@ -60,6 +65,12 @@ function onload_billiards() {
                 msg.textContent = data["Guessed"]["guesser"] + " guessed " + data["Guessed"]["drawer"] + "'s word for " + data["Guessed"]["points"] + " points!";
                 line.append(msg, document.createElement("br"));
                 chat.append(line);
+                if (data["Guessed"]["guesser"] == gName) {
+                    add_guessed(data["Guessed"]["drawer"]);
+                }
+                if (data["Guessed"]["drawer"] == gName) {
+                    add_guesser(data["Guessed"]["guesser"]);
+                }
                 while (chat.children.length > MAX_CHAT) {
                     chat.removeChild(chat.children[0]);
                 }
@@ -112,6 +123,13 @@ function onload_billiards() {
                     }
                     if (p == gName) {
                         nametag.setAttribute("me", true);
+                    }
+                    for (var guesser in player["guess_list"]) {
+                        if (p == gName) {
+                            add_guesser(guesser);
+                        } else if (guesser == gName) {
+                            add_guessed(p);
+                        }
                     }
                     add_drawing(p, []);
                 }
@@ -358,6 +376,27 @@ function onload_billiards() {
         lastStroke = strokes.length;
         if (data.length > 0) {
             socket.send(JSON.stringify({ "Image": { "image": data } }));
+        }
+    }
+    
+    function add_guesser(guesser) {
+        let a = add_player(guesser);
+        if (!gMyGuessers.has(guesser)) {
+            gMyGuessers.set(guesser, a);
+            a.setAttribute("movingguesser", "true");
+            a.setAttribute("guesser", "true");
+            setTimeout(function() {a.setAttribute("movingguesser", "false");}, 1);
+        }
+
+    }
+
+    function add_guessed(drawer) {
+        let a = add_player(drawer);
+        if (!gMyGuesses.has(drawer)) {
+            gMyGuesses.set(drawer, a);
+            a.setAttribute("movingguessed", "true");
+            a.setAttribute("guessed", "true");
+            setTimeout(function() {a.setAttribute("movingguessed", "false");}, 1);
         }
     }
 

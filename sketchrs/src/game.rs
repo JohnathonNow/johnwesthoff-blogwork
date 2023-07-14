@@ -2,9 +2,9 @@ use super::packets;
 use futures::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use strsim;
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
-use strsim;
 
 pub type GameState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
@@ -41,7 +41,7 @@ impl State {
     }
     fn guess_is_good(&self, guess: &str, word: &str) -> bool {
         let distance = strsim::levenshtein(&guess.to_lowercase(), &word.to_lowercase());
-        return distance <= guess.len().min(word.len()) / 5
+        return distance <= guess.len().min(word.len()) / 5;
     }
     fn guess(&mut self, guesser: &String, guess: &String) -> Option<(i32, String)> {
         for (drawer, word) in &self.words {
@@ -108,23 +108,30 @@ pub async fn handle(
     login_name: String,
 ) {
     let (tx, mut _rx) = broadcast::channel::<String>(100);
-
     {
         let mut gs = game_state.lock().unwrap();
         gs.sendable.set_host(&login_name);
-        gs.peer_map.insert(login_name.clone(), tx.clone());
+        let pm: &mut packets::PlayerState = gs.sendable.get_player_mut(&login_name);
+        if pm.is_active() {
+            let _ = tx.send(
+                serde_json::to_string(&packets::Outgoing::NewName {
+                    new_name: login_name.clone()
+                })
+                .unwrap(),
+            );
+        } else {
+            gs.peer_map.insert(login_name.clone(), tx.clone());
+        }
         drop(gs);
     }
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
 
     tokio::task::spawn(async move {
-        game_state
-            .lock()
-            .unwrap()
-            .sendable
-            .get_player_mut(&login_name)
-            .set_active(true);
-
+        {
+            let mut gs = game_state.lock().unwrap();
+            let pm: &mut packets::PlayerState = gs.sendable.get_player_mut(&login_name);
+            pm.set_active(true);
+        }
         let _ = gtx.send(
             serde_json::to_string(&packets::Outgoing::FullState {
                 state: &game_state.lock().unwrap().sendable,
@@ -192,7 +199,9 @@ pub async fn handle(
                         .unwrap_or(0);
                     }
                     packets::Incoming::Guess { guess } => {
-                        if let Some((time, drawer)) = game_state.lock().unwrap().guess(&login_name, &guess) {
+                        if let Some((time, drawer)) =
+                            game_state.lock().unwrap().guess(&login_name, &guess)
+                        {
                             let _ = gtx.send(
                                 serde_json::to_string(&packets::Outgoing::Guessed {
                                     drawer,
@@ -222,29 +231,31 @@ pub async fn handle(
                             serde_json::to_string(&packets::Outgoing::Image {
                                 username: login_name.clone(),
                                 image: game_state
-                                .lock()
-                                .unwrap()
-                                .sendable
-                                .get_player_mut(&login_name).slice(i),
-                                i
+                                    .lock()
+                                    .unwrap()
+                                    .sendable
+                                    .get_player_mut(&login_name)
+                                    .slice(i),
+                                i,
                             })
                             .unwrap(),
                         );
                     }
-                    packets::Incoming::Pull { i , username } => {
-                    let _ = tx.send(
-                        serde_json::to_string(&packets::Outgoing::Image {
-                            username: username.clone(),
-                            image: game_state
-                            .lock()
-                            .unwrap()
-                            .sendable
-                            .get_player_mut(&username).slice(i),
-                            i: i
-                        })
-                        .unwrap(),
-                    );
-                    },
+                    packets::Incoming::Pull { i, username } => {
+                        let _ = tx.send(
+                            serde_json::to_string(&packets::Outgoing::Image {
+                                username: username.clone(),
+                                image: game_state
+                                    .lock()
+                                    .unwrap()
+                                    .sendable
+                                    .get_player_mut(&username)
+                                    .slice(i),
+                                i: i,
+                            })
+                            .unwrap(),
+                        );
+                    }
                     packets::Incoming::Undo { i } => {
                         game_state
                             .lock()
@@ -254,11 +265,11 @@ pub async fn handle(
                             .undo(i);
                         let _ = gtx.send(
                             serde_json::to_string(&packets::Outgoing::Undo {
-                                username: login_name.clone()
+                                username: login_name.clone(),
                             })
                             .unwrap(),
                         );
-                    },
+                    }
                 }
             }
         }
@@ -267,10 +278,7 @@ pub async fn handle(
         x.peer_map.remove(&login_name);
         x.sendable.get_player_mut(&login_name).set_active(false);
         let _ = gtx.send(
-            serde_json::to_string(&packets::Outgoing::FullState {
-                state: &x.sendable,
-            })
-            .unwrap(),
+            serde_json::to_string(&packets::Outgoing::FullState { state: &x.sendable }).unwrap(),
         );
     });
 

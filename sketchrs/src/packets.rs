@@ -147,6 +147,9 @@ impl PlayerState {
         self.drawing.append(drawing);
         i as i32
     }
+    pub fn is_active(&self) -> bool {
+        self.active
+    }
     pub fn undo(&mut self, i: i32) {
         let newlen = self.drawing.len().saturating_sub(i as usize);
         self.drawing.truncate(newlen);
@@ -182,4 +185,7 @@ pub enum Outgoing<'a> {
     Undo {
         username: String,
     },
+    NewName {
+        new_name: String,
+    }
 }

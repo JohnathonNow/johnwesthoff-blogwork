@@ -291,9 +291,9 @@ function onload_billiards() {
         }
     }
 
-    function cycle() {
+    function cycle(_backwards) {
         if (gState["state"] == "RUNNING") {
-            let e = document.querySelector(".user-list-item[selected=\"true\"] + li") || document.querySelector("li.user-list-item:nth-child(1)");
+            let e = document.querySelector(".user-list-item[selected=\"true\"] + li[guessed=\"false\"]") || document.querySelector("li.user-list-item:nth-child(1)");
             console.log(e);
             for (let p of gMap.values()) {
                 p.style.display = "none";
@@ -388,7 +388,6 @@ function onload_billiards() {
             a.setAttribute("guesser", "true");
             setTimeout(function() {a.setAttribute("movingguesser", "false");}, 1);
         }
-
     }
 
     function add_guessed(drawer) {
@@ -407,7 +406,7 @@ function onload_billiards() {
     });
 
     $("#name").on("keydown", function search(e) {
-        if (e.keyCode == 13) {
+        if (e.key  == "Enter") {
             gName = $('#name').val();
             $('#game').show();
             $('#login').hide();
@@ -416,11 +415,11 @@ function onload_billiards() {
         }
     });
     $("#guess").on("keydown", function search(e) {
-        if (e.keyCode == 13) { //enter
+        if (e.key  == "Enter") {
             sendGuess($('#guess').val());
             $('#guess').val('');
-        } else if (e.keyCode == 9) { //tab
-            cycle();
+        } else if (e.key  == "Tab") {
+            cycle(e.shiftKey);
             e.preventDefault();
         }
     });

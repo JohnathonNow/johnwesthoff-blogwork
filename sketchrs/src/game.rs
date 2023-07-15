@@ -10,6 +10,9 @@ pub type GameState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
 type Words = HashMap<String, String>;
 
+const MAX_NAME_LENGTH: usize = 24;
+
+
 pub struct State {
     pub peer_map: PeerMap,
     sendable: packets::State,
@@ -18,10 +21,10 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(timelimit: i32, maxpoints: i32) -> Self {
+    pub fn new(timelimit: i32, maxpoints: i32, end_on_time: bool) -> Self {
         Self {
             peer_map: HashMap::new(),
-            sendable: packets::State::new(timelimit, maxpoints),
+            sendable: packets::State::new(timelimit, maxpoints, end_on_time),
             words: HashMap::new(),
             word_pool: Vec::new(),
         }
@@ -105,8 +108,9 @@ pub async fn handle(
     ws: WebSocket,
     game_state: GameState,
     gtx: broadcast::Sender<String>,
-    login_name: String,
+    login_name_pre: String,
 ) {
+    let login_name = truncate(&login_name_pre, MAX_NAME_LENGTH).to_string();
     let (tx, mut _rx) = broadcast::channel::<String>(100);
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
     let mut die = false;
@@ -289,5 +293,12 @@ pub async fn handle(
 
     while let Ok(msg) = _rx.recv().await {
         let _ = user_ws_tx.send(Message::text(msg)).await;
+    }
+}
+
+fn truncate(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        None => s,
+        Some((idx, _)) => &s[..idx],
     }
 }

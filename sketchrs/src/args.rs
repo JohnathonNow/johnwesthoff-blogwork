@@ -18,4 +18,8 @@ pub struct Args {
     /// Max Guess Points
     #[arg(short, long, default_value_t = 50)]
     pub maxpoints: i32,
+
+    /// End after time limit ends
+    #[arg(short, long, default_value_t = true)]
+    pub endontime: bool,
 }

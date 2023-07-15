@@ -26,10 +26,11 @@ pub struct State {
     time: i32,
     timelimit: i32,
     maxpoints: i32,
+    end_on_time: bool,
 }
 
 impl State {
-    pub fn new(timelimit: i32, maxpoints: i32) -> Self {
+    pub fn new(timelimit: i32, maxpoints: i32, end_on_time: bool) -> Self {
         Self {
             players: HashMap::new(),
             state: GameState::LOBBY,
@@ -37,6 +38,7 @@ impl State {
             host: None,
             timelimit,
             maxpoints,
+            end_on_time
         }
     }
     pub fn restart(&mut self) {
@@ -71,7 +73,7 @@ impl State {
             .fold((0, 0), |a, (_, p)| {
                 (a.0 + 1, a.1 + self.player_count_guesses(p))
             });
-        count_actives * (count_actives - 1) == count_guesses
+        count_actives * (count_actives - 1) == count_guesses || (self.end_on_time && self.time > self.timelimit)
     }
     pub fn set_state(&mut self, new_state: GameState) {
         self.state = new_state;

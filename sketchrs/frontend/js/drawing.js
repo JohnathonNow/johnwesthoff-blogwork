@@ -11,14 +11,12 @@ function clear_canvas() {
 }
 
 function see_element(element) {
-    /*$('#answers').css("max-height", $('#answers').height()+"px");*/
     let mw = window.innerHeight - document.getElementById("controls").offsetHeight*1.5 - element.getBoundingClientRect().top;
     
-    $(element).height(mw);
-    $(element).width(mw);
+    element.style.width = mw;
+    element.style.height = mw;
     element.setAttribute('width', mw);
     element.setAttribute('height', mw);
-    //$('#picture').hide();
     redraw();
 }
 
@@ -46,7 +44,7 @@ function onload_drawing() {
         paint = true;
         var border = getComputedStyle(this).getPropertyValue('border-left-width');
         border = parseInt(border);
-        var touches = e.originalEvent.changedTouches;
+        var touches = e.changedTouches;
         if (touches) {
             addClick((touches[0].pageX - this.offsetLeft - border) / context.canvas.width * 1000,
                      (touches[0].pageY - this.offsetTop - border) / context.canvas.height * 1000,
@@ -68,7 +66,7 @@ function onload_drawing() {
         if (paint) {
             var b = getComputedStyle(this).getPropertyValue('border-left-width');
             b = parseInt(b);
-            var touches = e.originalEvent.changedTouches;
+            var touches = e.changedTouches;
             if (touches) {
                 addClick((touches[0].pageX - this.offsetLeft - b) / context.canvas.width * 1000,
                          (touches[0].pageY - this.offsetTop - b) / context.canvas.height * 1000,
@@ -148,22 +146,20 @@ function onload_drawing() {
         strokes = strks.map(x => JSON.parse(x));
     }
 
-   
-
-    $('#canvas').on('touchstart mousedown', touch);
-    $('#canvas').on('touchmove mousemove', untouch);
-    $('#canvas').on('touchend mouseleave mouseup', function(e) {
+    document.getElementById("canvas").ontouchstart = document.getElementById("canvas").onmousedown = touch;
+    document.getElementById("canvas").ontouchmove = document.getElementById("canvas").onmousemove = untouch;
+    document.getElementById("canvas").ontouchend = document.getElementById("canvas").onmouseleave = document.getElementById("canvas").onmouseup = function(e) {
         redraw();
         paint = false;
-    } );
-    $('#colorpicker').on('change', function(e) { 
+    };
+    document.getElementById("colorpicker").onchange = function(e) { 
         mode = DRAW_MODE;
         color = e.target.value;
-    });
-    $('#size').on('change', function(e) { 
+    };
+    document.getElementById("size").onchange = function(e) { 
         size = e.target.value;
-    });
-    $('#undo').on('click', undo);
-    $('#pencil').on('click', pencil);
-    $('#erase').on('click', erase);
+    };
+    document.getElementById("undo").onclick = undo;
+    document.getElementById("pencil").onclick = pencil;
+    document.getElementById("erase").onclick = erase;
 }

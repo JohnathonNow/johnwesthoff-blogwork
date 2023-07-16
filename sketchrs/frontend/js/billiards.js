@@ -3,22 +3,19 @@ const MAX_CHAT = 30;
 var gName = null;
 var socket = null;
 var gMap = new Map();
-var gStrokes = null;
 var gMapLobby = null;
 var gAssign = null;
 var gState = null;
 var lastStroke = 0;
-var gUndo = null; // function
 var gstrks = null;
 var repull = true;
 var gameover = false;
 var gImgMap = new Map();
 var gMyGuessers = null;
 var gMyGuesses = null;
-
+var canvas = null;
 
 function reset() {
-    gStrokes = new Map();
     gMapLobby = new Map();
     gMyGuessers = new Map();
     gMyGuesses = new Map();
@@ -31,12 +28,13 @@ function reset() {
     document.getElementById("user-list-3").innerHTML = "";
     document.getElementById("user-list-2").innerHTML = "";
     document.getElementById("user-list-1").innerHTML = "";
-    gMap.set(gName, document.getElementById("canvas"));
-    clear_canvas();
+    gMap.set(gName, canvas);
+    canvas.clearCanvas();
 }
 
 
 function onload_billiards() {
+    canvas = new Canvas(document.getElementById("canvas"), document.getElementById("controls"), true);
     function connect() {
         reset();
         socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName));
@@ -95,14 +93,14 @@ function onload_billiards() {
                 }
                 chat.scrollTop = chat.scrollHeight;
             } else if (data["Image"]) {
-                add_drawing(data["Image"]["username"], data["Image"]["image"])
-                if (data["Image"]["username"] != gName && data["Image"]["i"] < gStrokes.get(data["Image"]["username"]).length) {
-                    socket.send(JSON.stringify({ "Pull": { "username": data["Image"]["username"], i: gStrokes.get(data["Image"]["username"]).length } }));
+                let can = add_drawing(data["Image"]["username"], data["Image"]["image"]);
+                if (data["Image"]["username"] != gName && data["Image"]["i"] < can.getStrokes().length) {
+                    socket.send(JSON.stringify({ "Pull": { "username": data["Image"]["username"], i: can.getStrokes().length } }));
                 }
                 if (data["Image"]["username"] == gName && repull) {
-                    load_drawing(data["Image"]["image"]);
+                    canvas.load(data["Image"]["image"]);
                     repull = false;
-                    redraw();
+                    canvas.redraw();
                 }
             } else if (data["Undo"]) {
                 undo_other(data["Undo"]["username"]);
@@ -138,8 +136,8 @@ function onload_billiards() {
                 if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                     sendAssign();
                 }
-                for ([player, istrokes] of gStrokes) {
-                    socket.send(JSON.stringify({ "Pull": { "username": player, i: istrokes.length } }));
+                for ([player, can] of gMap) {
+                    socket.send(JSON.stringify({ "Pull": { "username": player, i: can.getStrokes().length } }));
                 }
             }
         });
@@ -165,7 +163,7 @@ function onload_billiards() {
             timer.style.display = "block";
             timer.value = state["time"];
             timer.max = state["timelimit"];
-            on_visible();
+            canvas.setSize();
         } else if (state["state"] == "LOBBY") {
             gameover = false;
             document.getElementById("progress-container").style.display = "none";
@@ -203,13 +201,13 @@ function onload_billiards() {
                     let image = document.createElement("div");
                     image.classList = "finalimagecontainer";
                     let picture = document.createElement("img");
-                    gstrks = gStrokes.get(player);
-                    if (gstrks) {
-                        redraw_other(gMap.get(player).getContext("2d"), gstrks);
+                    let can = gMap.get(player);
+                    if (can) {
+                        can.redraw();
+                        picture.src = can.getCanvas().toDataURL();
                     }
-                    picture.src = gMap.get(player).toDataURL();
                     image.onclick = function() {
-                        picture.src = gMap.get(player).toDataURL();
+                        picture.src = gMap.get(player).getCanvas().toDataURL();
                         Array.prototype.forEach.call(document.getElementsByClassName("finalimagecontainer"), d=>d.style.display = "none");
                     };
                     image.appendChild(picture);
@@ -270,24 +268,21 @@ function onload_billiards() {
     function player_click(e) {
         if (gState["state"] == "RUNNING") {
             for (let p of gMap.values()) {
-                p.style.display = "none";
+                console.log(p);
+                p.hide();
             }
             for (let p of gMapLobby.values()) {
                 p.setAttribute("selected", "false");
             }
             let can = gMap.get(e.target.getAttribute("__player"));
-            gstrks = gStrokes.get(e.target.getAttribute("__player"));
-            can.style.display = "block";
-            see_element(can);
-            if (gstrks) {
-                redraw_other(can.getContext("2d"), gstrks);
-            }
-            redraw();
+            can.show();
+            can.setSize();
+            can.redraw();
+            canvas.redraw();
             gMapLobby.get(e.target.getAttribute("__player")).setAttribute("selected", "true");
         } else if (gState["state"] == "POSTGAME") {
             gImgMap.get(e.target.getAttribute("__player")).style.display = "block";
             gImgMap.get(e.target.getAttribute("__player")).querySelector("img").style.display = "block";
-
         }
     }
 
@@ -296,19 +291,16 @@ function onload_billiards() {
             let e = document.querySelector(".user-list-item[selected=\"true\"] + li") || document.querySelector("li.user-list-item:nth-child(1)");
             console.log(e);
             for (let p of gMap.values()) {
-                p.style.display = "none";
+                p.hide();
             }
             for (let p of gMapLobby.values()) {
                 p.setAttribute("selected", "false");
             }
             let can = gMap.get(e.getAttribute("__player"));
-            gstrks = gStrokes.get(e.getAttribute("__player"));
-            can.style.display = "block";
-            see_element(can);
-            if (gstrks) {
-                redraw_other(can.getContext("2d"), gstrks);
-            }
-            redraw();
+            can.show();
+            can.setSize();
+            can.redraw();
+            canvas.redraw();
             gMapLobby.get(e.getAttribute("__player")).setAttribute("selected", "true");
         }
     }
@@ -325,12 +317,14 @@ function onload_billiards() {
         if (drawer == gName) {
             return;
         }
-        if (!gStrokes.has(drawer)) {
-            gStrokes.set(drawer, []);
-            return;
+        if (!gMap.has(drawer)) {
+            let newCanvasElement = document.createElement("canvas");
+            gMap.set(drawer, new Canvas(newCanvasElement, document.getElementById("controls"), false));
+            newCanvasElement.classList = "image";
+            document.getElementById("gallery").appendChild(newCanvasElement);
         }
-        let strks = gStrokes.get(drawer);
-        gStrokes.set(drawer, strks.slice(0, strks[strks.length - 1]["t"]));
+        let theircanvas = gMap.get(drawer);
+        theircanvas.undo();
         add_drawing(drawer, []);
     }
 
@@ -338,22 +332,18 @@ function onload_billiards() {
         if (drawer == gName) {
             return;
         }
-        if (!gStrokes.has(drawer)) {
-            gStrokes.set(drawer, []);
-        }
         if (!gMap.has(drawer)) {
-            let newCanvas = document.createElement("canvas");
-            gMap.set(drawer, newCanvas);
-            newCanvas.classList = "image";
-            document.getElementById("gallery").appendChild(newCanvas);
+            let newCanvasElement = document.createElement("canvas");
+            gMap.set(drawer, new Canvas(newCanvasElement, document.getElementById("controls"), false));
+            newCanvasElement.classList = "image";
+            document.getElementById("gallery").appendChild(newCanvasElement);
         }
-        let strks = gStrokes.get(drawer).concat(image.map(x => JSON.parse(x)));
-        gStrokes.set(drawer, strks);
-        let canvas = gMap.get(drawer);
-        see_element(canvas);
-        redraw_other(canvas.getContext("2d"), strks);
-        redraw();
-        return canvas;
+        let theircanvas = gMap.get(drawer);
+        theircanvas.add(image);
+        theircanvas.setSize();
+        theircanvas.redraw();
+        canvas.redraw();
+        return theircanvas;
     }
 
     function start() {
@@ -373,6 +363,7 @@ function onload_billiards() {
     }
 
     function sendDrawing() {
+        let strokes = canvas.getStrokes();
         var data = strokes.slice(lastStroke).map(x => JSON.stringify(x));
         lastStroke = strokes.length;
         if (data.length > 0) {
@@ -403,11 +394,8 @@ function onload_billiards() {
         e.preventDefault();
         sendDrawing();
     }
-    let canvas = document.getElementById("canvas");
-    canvas.addEventListener("touchend", draw_event_handler);
-    canvas.addEventListener("mouseleave", draw_event_handler);
-    canvas.addEventListener("mouseup", draw_event_handler);
-    document.getElementById("name").addEventListener("keydown", function (e) {
+    canvas.addEventListener("stroke", draw_event_handler);
+    document.getElementById("name").onkeydown = function (e) {
         if (e.key  == "Enter") {
             gName = e.target.value;
             document.getElementById("game").style.display = "block";
@@ -415,7 +403,7 @@ function onload_billiards() {
             connect();
             document.cookie = gName;
         }
-    });
+    };
     document.getElementById("guess").addEventListener("keydown", function search(e) {
         if (e.key  == "Enter") {
             gName = e.target.value;

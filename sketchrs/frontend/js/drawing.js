@@ -1,165 +1,223 @@
-var canvas;
-var context;
-var strokes = new Array();
-var redraw = null;
-var redraw_other = null;
-var load_drawing = null;
+const PENCIL_MODE = "source-over";
+const ERASE_MODE = "destination-out;"
 
-function clear_canvas() {
-    strokes.length = 0;
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-}
+class Canvas extends EventTarget {
+    constructor(canvas_element, controls_element, add_controls) {
+        super();
+        this.strokes = new Array();
+        this.canvas_element = canvas_element;
+        this.context = this.canvas_element.getContext("2d");
+        this.controls_element = controls_element;
 
-function see_element(element) {
-    let mw = window.innerHeight - document.getElementById("controls").offsetHeight*1.5 - element.getBoundingClientRect().top;
-    
-    element.style.width = mw;
-    element.style.height = mw;
-    element.setAttribute('width', mw);
-    element.setAttribute('height', mw);
-    redraw();
-}
+        this.paint = false;
+        this.color = "#000000";
+        this.size = 5;
+        this.traceback = 0;
+
+        this.mode = PENCIL_MODE;
 
 
-function on_visible() {
-    see_element(canvas);
-}
+        this.canvas_element.ontouchstart = this.canvas_element.onmousedown = e => this.onTouch(e);
+        this.canvas_element.ontouchmove = this.canvas_element.onmousemove = e => this.onUntouch(e);
+        this.canvas_element.ontouchend = this.canvas_element.onmouseleave = this.canvas_element.onmouseup = e => {
+            this.redraw();
+            this.paint = false;
+            this.dispatchEvent(new CustomEvent("stroke"));
+        };
 
-function onload_drawing() {
-    var DRAW_MODE;
-    var paint;
-    var color = "#000000";
-    var size = 5;
-    var mode;
-    var TRACEBACK = 0;
+        if (add_controls) {
+            this.controls = {
+                color: document.createElement("input"),
+                stroke: document.createElement("input"),
+                erase: document.createElement("button"),
+                pencil: document.createElement("button"),
+                undo: document.createElement("button")
+            };
 
-    canvas = document.getElementById('canvas');
-    context = canvas.getContext("2d");
-    DRAW_MODE = context.globalCompositeOperation;
-    mode = DRAW_MODE;
-    var touch = function(e){
+            this.controls.color.type = "color";
+            this.controls.color.classList.add("colorpicker");
+            this.controls.stroke.type = "range";
+            this.controls.stroke.value = "5";
+            this.controls.stroke.min = "1";
+            this.controls.stroke.max = "50";
+            this.controls.stroke.classList.add("sizepicker");
+            this.controls.erase.classList.add("erasebutton");
+            this.controls.erase.innerHTML = "Erase";
+            this.controls.pencil.classList.add("pencilbutton");
+            this.controls.pencil.innerHTML = "Draw";
+            this.controls.undo.classList.add("undobutton");
+            this.controls.undo.innerHTML = "Undo";
+
+
+            controls_element.appendChild(document.createTextNode("Color: "));
+            controls_element.appendChild(this.controls.color);
+            controls_element.appendChild(document.createTextNode("Stroke: "));
+            controls_element.appendChild(this.controls.stroke);
+            controls_element.appendChild(this.controls.erase);
+            controls_element.appendChild(this.controls.pencil);
+            controls_element.appendChild(this.controls.undo);
+            this.controls.color.onchange = e => {
+                this.mode = PENCIL_MODE;
+                this.color = e.target.value;
+            };
+            this.controls.stroke.onchange = e => {
+                this.size = e.target.value;
+            };
+            this.controls.undo.onclick = e => this.undo(e);
+            this.controls.pencil.onclick = e => this.pencil(e);
+            this.controls.erase.onclick = e => this.erase(e);
+        }
+    }
+
+    getStrokes() {
+        return this.strokes;
+    }
+
+    clearCanvas() {
+        this.strokes.length = 0;
+        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+        this.dispatchEvent(new CustomEvent("change"));
+    }
+
+    getCanvas() {
+        return this.canvas_element;
+    }
+
+    redraw() {
+        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+        this.context.lineJoin = "round";
+
+        for (var i = 0; i < this.strokes.length; i++) {
+            this.context.strokeStyle = this.strokes[i]["c"];
+            this.context.lineWidth = this.strokes[i]["s"];
+            this.context.globalCompositeOperation = this.strokes[i]["m"];
+            this.context.beginPath();
+            if (this.strokes[i]["d"] && i) {
+                this.context.moveTo(this.strokes[i - 1]["x"] * this.context.canvas.width / 1000, this.strokes[i - 1]["y"] * this.context.canvas.height / 1000);
+            } else {
+                this.context.moveTo(this.strokes[i]["x"] * this.context.canvas.width / 1000 - 1, this.strokes[i]["y"] * this.context.canvas.height / 1000);
+            }
+            this.context.lineTo(this.strokes[i]["x"] * this.context.canvas.width / 1000, this.strokes[i]["y"] * this.context.canvas.height / 1000);
+            this.context.closePath();
+            this.context.stroke();
+        }
+        this.dispatchEvent(new CustomEvent("redraw"));
+    }
+
+    setSize() {
+        let oh = this.controls_element ? this.controls_element.offsetHeight * 1.5 : 0;
+        let mw = window.innerHeight - oh - this.canvas_element.getBoundingClientRect().top;
+
+        this.canvas_element.style.width = mw;
+        this.canvas_element.style.height = mw;
+        this.canvas_element.setAttribute('width', mw);
+        this.canvas_element.setAttribute('height', mw);
+
+        this.redraw();
+    }
+
+    onTouch(e) {
         e.preventDefault();
 
-        TRACEBACK = 0;
-        paint = true;
-        var border = getComputedStyle(this).getPropertyValue('border-left-width');
+        this.traceback = 0;
+        this.paint = true;
+        var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
         border = parseInt(border);
         var touches = e.changedTouches;
         if (touches) {
-            addClick((touches[0].pageX - this.offsetLeft - border) / context.canvas.width * 1000,
-                     (touches[0].pageY - this.offsetTop - border) / context.canvas.height * 1000,
-                     color,
-                     size,
-                     mode);
+            this.addClick((touches[0].pageX - e.target.offsetLeft - border) / this.context.canvas.width * 1000,
+                (touches[0].pageY - e.target.offsetTop - border) / this.context.canvas.height * 1000,
+                this.color,
+                this.size,
+                this.mode);
         } else {
-            addClick((e.pageX - this.offsetLeft - border) / context.canvas.width * 1000,
-                     (e.pageY - this.offsetTop - border) / context.canvas.height * 1000,
-                     color,
-                     size,
-                     mode);
+            this.addClick((e.pageX - e.target.offsetLeft - border) / this.context.canvas.width * 1000,
+                (e.pageY - e.target.offsetTop - border) / this.context.canvas.height * 1000,
+                this.color,
+                this.size,
+                this.mode);
         }
-        redraw();
+        this.redraw();
     }
 
-    var untouch = function(e){
+    onUntouch(e) {
         e.preventDefault();
-        if (paint) {
-            var b = getComputedStyle(this).getPropertyValue('border-left-width');
+        if (this.paint) {
+            var b = getComputedStyle(e.target).getPropertyValue('border-left-width');
             b = parseInt(b);
             var touches = e.changedTouches;
             if (touches) {
-                addClick((touches[0].pageX - this.offsetLeft - b) / context.canvas.width * 1000,
-                         (touches[0].pageY - this.offsetTop - b) / context.canvas.height * 1000,
-                         color,
-                         size,
-                         mode,
-                         true);
+                this.addClick((touches[0].pageX - e.target.offsetLeft - b) / this.context.canvas.width * 1000,
+                    (touches[0].pageY - e.target.offsetTop - b) / this.context.canvas.height * 1000,
+                    this.color,
+                    this.size,
+                    this.mode,
+                    true);
             } else {
-                addClick((e.pageX - this.offsetLeft - b) / context.canvas.width * 1000,
-                         (e.pageY - this.offsetTop - b) / context.canvas.height * 1000,
-                         color,
-                         size,
-                         mode,
-                         true);
+                this.addClick((e.pageX - e.target.offsetLeft - b) / this.context.canvas.width * 1000,
+                    (e.pageY - e.target.offsetTop - b) / this.context.canvas.height * 1000,
+                    this.color,
+                    this.size,
+                    this.mode,
+                    true);
             }
-            redraw();
+            this.redraw();
         }
     }
 
-    function pencil()
-    {
-        mode = DRAW_MODE;
+    pencil() {
+        this.mode = PENCIL_MODE;
+        this.dispatchEvent(new CustomEvent("pencil"));
     }
 
-    function erase()
-    {
-        color = "rgba(0,0,0,1)";
-        mode = "destination-out";
+    erase() {
+        this.color = "rgba(0,0,0,1)";
+        this.mode = ERASE_MODE;
+        this.dispatchEvent(new CustomEvent("erase"));
     }
 
-    function undo()
-    {
-        if (strokes.length > 0) {
-            var len = strokes.length;
-            strokes = strokes.slice(0, strokes[strokes.length - 1]["t"]);
-            redraw();
-            gUndo(strokes.length - len);
+    undo() {
+        if (this.strokes.length > 0) {
+            var len = this.strokes.length;
+            this.strokes = this.strokes.slice(0, this.strokes[this.strokes.length - 1]["t"]);
+            this.redraw();
+            this.dispatchEvent(new CustomEvent("undo", { detail: { newlength: strokes.length - len } }));
         }
     }
 
-    function addClick(x, y, c, s, m, dragging)
-    {
-        strokes.push({ "x": x,
-                       "y": y,
-                       "c": c,
-                       "s": s,
-                       "m": m,
-                       "d": dragging,
-                       "t": --TRACEBACK});
+    addClick(x, y, c, s, m, dragging) {
+        this.strokes.push({
+            "x": x,
+            "y": y,
+            "c": c,
+            "s": s,
+            "m": m,
+            "d": dragging,
+            "t": --this.traceback
+        });
+        this.dispatchEvent(new CustomEvent("change"));
     }
 
-    redraw = function(){
-        redraw_other(context, strokes);
+    load(strks) {
+        this.strokes = strks.map(x => JSON.parse(x));
+        this.dispatchEvent(new CustomEvent("change"));
     }
 
-    redraw_other = function(ctx, stks){
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.lineJoin = "round";
-                
-        for(var i=0; i < stks.length; i++) {		
-            ctx.strokeStyle = stks[i]["c"];
-            ctx.lineWidth = stks[i]["s"];
-            ctx.globalCompositeOperation = stks[i]["m"];
-            ctx.beginPath();
-            if(stks[i]["d"] && i){
-                ctx.moveTo(stks[i-1]["x"]*ctx.canvas.width/1000, stks[i-1]["y"]*ctx.canvas.height/1000);
-            } else {
-                ctx.moveTo(stks[i]["x"]*ctx.canvas.width/1000-1, stks[i]["y"]*ctx.canvas.height/1000);
-            }
-            ctx.lineTo(stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000);
-            ctx.closePath();
-            ctx.stroke();
+    add(image) {
+        this.strokes = this.strokes.concat(image.map(x => JSON.parse(x)));
+        this.dispatchEvent(new CustomEvent("change"));
+    }
+
+    hide() {
+        if (this.canvas_element.style.display != "none") {
+            this.old_display = this.canvas_element.style.display;
         }
-    }
-    
-    load_drawing = function(strks) {
-        strokes = strks.map(x => JSON.parse(x));
+        this.canvas_element.style.display = "none";
+        this.dispatchEvent(new CustomEvent("hidden"));
     }
 
-    document.getElementById("canvas").ontouchstart = document.getElementById("canvas").onmousedown = touch;
-    document.getElementById("canvas").ontouchmove = document.getElementById("canvas").onmousemove = untouch;
-    document.getElementById("canvas").ontouchend = document.getElementById("canvas").onmouseleave = document.getElementById("canvas").onmouseup = function(e) {
-        redraw();
-        paint = false;
-    };
-    document.getElementById("colorpicker").onchange = function(e) { 
-        mode = DRAW_MODE;
-        color = e.target.value;
-    };
-    document.getElementById("size").onchange = function(e) { 
-        size = e.target.value;
-    };
-    document.getElementById("undo").onclick = undo;
-    document.getElementById("pencil").onclick = pencil;
-    document.getElementById("erase").onclick = erase;
+    show() {
+        this.canvas_element.style.display = this.old_display || "block";
+        this.dispatchEvent(new CustomEvent("shown"));
+    }
 }

@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cliargs = args::Args::parse();
     let mut inner_game_state = game::State::new(cliargs.timelimit, cliargs.maxpoints, cliargs.endontime);
     inner_game_state.add_words(read_words(&cliargs.words)?);
-    let game_state: game::GameState = Arc::new(Mutex::new(inner_game_state));
+    let game_state: game::GameServerState = Arc::new(Mutex::new(inner_game_state));
 
     let (tx, mut _rx) = broadcast::channel::<String>(100);
 
@@ -65,8 +65,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn with_game_state(
-    game_state: game::GameState,
-) -> impl Filter<Extract = (game::GameState,), Error = std::convert::Infallible> + Clone {
+    game_state: game::GameServerState,
+) -> impl Filter<Extract = (game::GameServerState,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || game_state.clone())
 }
 

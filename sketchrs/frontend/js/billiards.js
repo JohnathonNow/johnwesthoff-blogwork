@@ -293,7 +293,7 @@ function onload_billiards() {
 
     function cycle(_backwards) {
         if (gState["state"] == "RUNNING") {
-            let e = document.querySelector(".user-list-item[selected=\"true\"] + li[guessed=\"false\"]") || document.querySelector("li.user-list-item:nth-child(1)");
+            let e = document.querySelector(".user-list-item[selected=\"true\"] + li") || document.querySelector("li.user-list-item:nth-child(1)");
             console.log(e);
             for (let p of gMap.values()) {
                 p.style.display = "none";
@@ -399,25 +399,28 @@ function onload_billiards() {
             setTimeout(function() {a.setAttribute("movingguessed", "false");}, 1);
         }
     }
-
-    $('#canvas').on('touchend mouseleave mouseup', function (e) {
+    function draw_event_handler(e) {
         e.preventDefault();
         sendDrawing();
-    });
-
-    $("#name").on("keydown", function search(e) {
+    }
+    let canvas = document.getElementById("canvas");
+    canvas.addEventListener("touchend", draw_event_handler);
+    canvas.addEventListener("mouseleave", draw_event_handler);
+    canvas.addEventListener("mouseup", draw_event_handler);
+    document.getElementById("name").addEventListener("keydown", function (e) {
         if (e.key  == "Enter") {
-            gName = $('#name').val();
-            $('#game').show();
-            $('#login').hide();
+            gName = e.target.value;
+            document.getElementById("game").style.display = "block";
+            document.getElementById("login").style.display = "none";
             connect();
             document.cookie = gName;
         }
     });
-    $("#guess").on("keydown", function search(e) {
+    document.getElementById("guess").addEventListener("keydown", function search(e) {
         if (e.key  == "Enter") {
-            sendGuess($('#guess').val());
-            $('#guess').val('');
+            gName = e.target.value;
+            sendGuess(e.target.value);
+            e.target.value = "";
         } else if (e.key  == "Tab") {
             cycle(e.shiftKey);
             e.preventDefault();

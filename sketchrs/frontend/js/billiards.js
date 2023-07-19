@@ -1,3 +1,4 @@
+import * as Drawing from 'drawing.js';
 const MAX_CHAT = 30;
 
 var gName = null;
@@ -34,7 +35,7 @@ function reset() {
 
 
 function onload_billiards() {
-    canvas = new Canvas(document.getElementById("canvas"), document.getElementById("controls"), true);
+    canvas = new Drawing.Canvas(document.getElementById("canvas"), document.getElementById("controls"), true);
     function connect() {
         reset();
         socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName));
@@ -246,12 +247,6 @@ function onload_billiards() {
         }
     }
 
-    gUndo = function (qty) {
-        //lastStroke -= 2;
-        lastStroke = strokes.length;
-        socket.send(JSON.stringify({ "Undo": { "i": qty } }));
-    }
-
     function add_player(player) {
         if (!gMapLobby.has(player)) {
             const listItem = document.createElement('li');
@@ -319,7 +314,7 @@ function onload_billiards() {
         }
         if (!gMap.has(drawer)) {
             let newCanvasElement = document.createElement("canvas");
-            gMap.set(drawer, new Canvas(newCanvasElement, document.getElementById("controls"), false));
+            gMap.set(drawer, new Drawing.Canvas(newCanvasElement, document.getElementById("controls"), false));
             newCanvasElement.classList = "image";
             document.getElementById("gallery").appendChild(newCanvasElement);
         }
@@ -334,7 +329,7 @@ function onload_billiards() {
         }
         if (!gMap.has(drawer)) {
             let newCanvasElement = document.createElement("canvas");
-            gMap.set(drawer, new Canvas(newCanvasElement, document.getElementById("controls"), false));
+            gMap.set(drawer, new Drawing.Canvas(newCanvasElement, document.getElementById("controls"), false));
             newCanvasElement.classList = "image";
             document.getElementById("gallery").appendChild(newCanvasElement);
         }
@@ -395,6 +390,10 @@ function onload_billiards() {
         sendDrawing();
     }
     canvas.addEventListener("stroke", draw_event_handler);
+    canvas.addEventListener("undo", e => {
+        lastStroke = canvas.getStrokes().length;
+        socket.send(JSON.stringify({ "Undo": { "i": e.detail.newlength } }));
+    });
     document.getElementById("name").onkeydown = function (e) {
         if (e.key  == "Enter") {
             gName = e.target.value;

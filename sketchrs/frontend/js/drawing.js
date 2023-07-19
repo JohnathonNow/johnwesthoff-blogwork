@@ -1,8 +1,33 @@
-const PENCIL_MODE = "source-over";
-const ERASE_MODE = "destination-out;"
+export class Gallery extends EventTarget {
+    constructor(container, controls, mainPlayer) {
+        this.container = container;
+        this.controls = controls;
+        this.map = new Map();
+    }
+    add(player, addControls=false) {
+        if (!this.map.contains(player)) {
+            let newCanvasElement = document.createElement("canvas");
+            this.map.set(player, new Canvas(newCanvasElement, this.controls, addControls));
+            newCanvasElement.classList = "image";
+            this.container.appendChild(newCanvasElement);
+            this.dispatchEvent(new CustomEvent("change", {detail: {added: player}}));
+        }
+        return this.map.get(player);
+    }
+    get(player) {
+        return this.map.get(player);
+    }
+    clear() {
+        for (var canvas of this.map.values()) {
+            canvas.clearCanvas();
+        }
+    }
+}
 
-class Canvas extends EventTarget {
-    constructor(canvas_element, controls_element, add_controls) {
+export const PENCIL_MODE = "source-over";
+export const ERASE_MODE = "destination-out;"
+export class Canvas extends EventTarget {
+    constructor(canvas_element, controls_element, add_controls=false) {
         super();
         this.strokes = new Array();
         this.canvas_element = canvas_element;
@@ -181,7 +206,7 @@ class Canvas extends EventTarget {
             var len = this.strokes.length;
             this.strokes = this.strokes.slice(0, this.strokes[this.strokes.length - 1]["t"]);
             this.redraw();
-            this.dispatchEvent(new CustomEvent("undo", { detail: { newlength: strokes.length - len } }));
+            this.dispatchEvent(new CustomEvent("undo", { detail: { newlength: this.strokes.length } }));
         }
     }
 

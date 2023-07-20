@@ -56,6 +56,14 @@ export class UserList extends EventTarget {
         setTimeout(function() {listItem.setAttribute("moving"+property, "false");}, 1);
     }
     clear() {
+        for (var player of this.map.values()) {
+            player.set();
+        }
         this.container.innerHTML = "";
+    }
+    setContainer(container) {
+        this.clear();
+        this.container = container;
+        this.sort();
     }
 }

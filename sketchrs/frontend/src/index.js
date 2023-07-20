@@ -1,6 +1,6 @@
 import * as Drawing from './drawing.js';
 import * as Userlist from './userlist.js';
-
+import * as Pages from './pages.js';
 
 function onload_billiards() {
 
@@ -14,14 +14,17 @@ function onload_billiards() {
     var gMyGuessers = null;
     var gMyGuesses = null;
     var canvas = null;
+    var canvas;
     const gallery = new Drawing.Gallery(document.getElementById("gallery"), document.getElementById("controls"));
     const lobby = new Userlist.UserList(document.getElementById("user-list-2"));
-    const ingamenames = new Userlist.UserList(document.getElementById("user-list-1"));
-    const endgamenames = new Userlist.UserList(document.getElementById("user-list-3"));
-    var canvas;
+    const pages = new Pages.Pages();
+    pages.addPage("running", document.getElementById("progress-container"), "flex");
+    pages.addPage("lobby", document.getElementById("lobby-container"));
+    pages.addPage("endgame", document.getElementById("endgame-container"));
+    pages.goTo("lobby");
+
 
     function reset() {
-        gMapLobby = new Map();
         gMyGuessers = new Map();
         gMyGuesses = new Map();
         gAssign = null;
@@ -39,23 +42,20 @@ function onload_billiards() {
         gState = state;
         let timer = document.getElementById("timer");
         if (state["state"] == "RUNNING") {
-            document.getElementById("progress-container").style.display = "flex";
-            document.getElementById("lobby-container").style.display = "none";
-            document.getElementById("endgame-container").style.display = "none";
+            pages.goTo("running");
+            lobby.setContainer(document.getElementById("user-list-1"));
             timer.style.display = "block";
             timer.value = state["time"];
             timer.max = state["timelimit"];
             canvas.setSize();
         } else if (state["state"] == "LOBBY") {
             gameover = false;
-            document.getElementById("progress-container").style.display = "none";
-            document.getElementById("lobby-container").style.display = "block";
-            document.getElementById("endgame-container").style.display = "none";
+            pages.goTo("lobby");
+            lobby.setContainer(document.getElementById("user-list-2"));
             timer.style.display = "none";
         } else if (state["state"] == "POSTGAME") {
-            document.getElementById("progress-container").style.display = "none";
-            document.getElementById("lobby-container").style.display = "none";
-            document.getElementById("endgame-container").style.display = "block";
+            pages.goTo("endgame");
+            lobby.setContainer(document.getElementById("user-list-3"));
             timer.style.display = "none";
             show_winners();
         }

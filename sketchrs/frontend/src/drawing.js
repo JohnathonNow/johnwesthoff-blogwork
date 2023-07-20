@@ -1,5 +1,5 @@
 export class Gallery extends EventTarget {
-    constructor(container, controls, mainPlayer) {
+    constructor(container, controls) {
         this.container = container;
         this.controls = controls;
         this.map = new Map();
@@ -203,11 +203,11 @@ export class Canvas extends EventTarget {
 
     undo() {
         if (this.strokes.length > 0) {
-            var len = this.strokes.length;
             this.strokes = this.strokes.slice(0, this.strokes[this.strokes.length - 1]["t"]);
             this.redraw();
             this.dispatchEvent(new CustomEvent("undo", { detail: { newlength: this.strokes.length } }));
         }
+        return this.strokes.length;
     }
 
     addClick(x, y, c, s, m, dragging) {

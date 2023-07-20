@@ -1,10 +1,18 @@
 export class UserListItem {
     constructor(player, parent) {
         this.element = document.createElement('li');
-        his.element.textContent = player;
+        this.element.textContent = player;
+        this.player = player;
         this.parent = parent;
-        his.element.classList.add('user-list-item');
-        his.element.onclick = parent.onClickBind.bind(this);
+        this.element.classList.add('user-list-item');
+        this.element.onclick = parent.onClickBind.bind(this);
+    }
+    set(text) {
+        if (text !== undefined) {
+            this.element.textContent = text;
+        } else {
+            this.element.textContent = this.player;
+        }
     }
 }
 export class UserList extends EventTarget {

@@ -4,10 +4,12 @@ export class Pages extends EventTarget {
         this.map = new Map();
     }
     addPage(name, page, style="block") {
-        this.map.insert(name, [page, style]);
+        this.map.set(name, [page, style]);
     }
     goTo(name) {
-        this.map.values().forEach(x=>x.style.display = "none");
+        for (let [key, value] of this.map) {
+            value[0].style.display = "none";
+        }
         const [page, style] = this.map.get(name);
         page.style.display = style;
     }

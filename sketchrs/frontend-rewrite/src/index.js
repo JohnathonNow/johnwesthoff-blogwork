@@ -13,8 +13,6 @@ function onload_billiards() {
     var gameover = false;
     var gMyGuessers = null;
     var gMyGuesses = null;
-    var canvas = null;
-    var canvas;
     const gallery = new Drawing.Gallery(document.getElementById("gallery"), document.getElementById("controls"));
     const lobby = new Userlist.UserList(document.getElementById("user-list-2"));
     const pages = new Pages.Pages();
@@ -216,19 +214,19 @@ function onload_billiards() {
         e.preventDefault();
         sendDrawing();
     }
-    canvas.addEventListener("stroke", draw_event_handler);
-    canvas.addEventListener("undo", e => {
-        lastStroke = canvas.getStrokes().length;
-        socket.send(JSON.stringify({ "Undo": { "i": e.detail.newlength } }));
-    });
     document.getElementById("name").onkeydown = function (e) {
         if (e.key  == "Enter") {
             gName = e.target.value;
             document.getElementById("game").style.display = "block";
             document.getElementById("login").style.display = "none";
-            connect();
+            //connect();
             document.cookie = gName;
             canvas = gallery.add(gName, true);
+            canvas.addEventListener("stroke", draw_event_handler);
+            canvas.addEventListener("undo", e => {
+                lastStroke = canvas.getStrokes().length;
+                socket.send(JSON.stringify({ "Undo": { "i": e.detail.newlength } }));
+            });
         }
     };
     document.getElementById("guess").addEventListener("keydown", function search(e) {
@@ -271,4 +269,4 @@ function onload_billiards() {
     }, 1000);
 }
 
-document.body.onload = onload_billiards;
+window.onload = onload_billiards;

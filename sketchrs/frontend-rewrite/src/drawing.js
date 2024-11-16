@@ -1,5 +1,6 @@
 export class Gallery extends EventTarget {
     constructor(container, controls) {
+        super();
         this.container = container;
         this.controls = controls;
         this.map = new Map();

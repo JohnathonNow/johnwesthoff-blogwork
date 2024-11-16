@@ -8,16 +8,17 @@ body{
     overflow-x:hidden;
 }
 
-#colorpicker {
+.colorpicker {
     display: inline-block;
     width: 90%;
     padding: 0;
 }
-#size {
+.sizepicker {
     display: inline-block;
     width: 90%;
     padding: 0;
 }
+
 input {
 	display: block;
 	width: 100%;

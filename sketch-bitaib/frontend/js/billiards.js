@@ -114,6 +114,8 @@ function onload_billiards() {
                     console.log("NUKED!");
                     reset();
                 }
+                gAssign = data["FullState"]["state"]["word"];
+                document.getElementById("word").textContent = "Please draw: " + gAssign;
                 let namelist = get_namelist(data["FullState"]["state"]);
                 for (var p in data["FullState"]["state"]["players"]) {
                     let player = data["FullState"]["state"]["players"][p];
@@ -134,8 +136,6 @@ function onload_billiards() {
                     }
                     add_drawing(p, []);
                 }
-                gAssign = data["FullState"]["state"]["word"];
-                document.getElementById("word").textContent = "Please draw: " + gAssign;
                 tick(data["FullState"]["state"]);
                 if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                     sendAssign();

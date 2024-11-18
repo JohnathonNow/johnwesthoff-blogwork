@@ -187,10 +187,6 @@ function onload_billiards() {
             document.getElementById("start").style.display = "block";
             document.getElementById("restart").style.display = "block";
         }
-        let judge = document.getElementById("judge");
-        if (!lastJudged || lastJudged + 10000 < Date.now()) {
-            judge.disabled = false;
-        }
     }
 
     function gameend() {
@@ -455,6 +451,10 @@ function onload_billiards() {
         if (gState && gState["state"] == "RUNNING") {
             let timer = document.getElementById("timer");
             timer.value += 1;
+        }
+        let judge = document.getElementById("judge");
+        if (!lastJudged || lastJudged + 10000 < Date.now()) {
+            judge.disabled = false;
         }
     }, 1000);
     document.getElementById("judge").onclick = function(e) {

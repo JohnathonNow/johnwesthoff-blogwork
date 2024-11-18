@@ -8,7 +8,7 @@ use warp::ws::{Message, WebSocket};
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use base64::Engine;
-use fastembed::ImageEmbedding;
+use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
 
 pub type GameServerState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
@@ -31,7 +31,6 @@ pub struct State {
 
 impl State {
     pub fn new(timelimit: i32, maxpoints: i32, end_on_time: bool) -> Self {
-        use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
 
         let ai = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::ClipVitB32).with_show_download_progress(true),
@@ -203,6 +202,12 @@ pub async fn handle(
                         let score = gs.score(path);
                         println!("Wow, score is {}", score);
                         gs.sendable.get_player_mut(&login_name).score = score;
+                        let _ = gtx.send(
+                            serde_json::to_string(&packets::Outgoing::Score {
+                                score,
+                            })
+                            .unwrap(),
+                        );
                     }
                 }
             }

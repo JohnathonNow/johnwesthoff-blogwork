@@ -17,7 +17,6 @@ var gMyGuessers = null;
 var gMyGuesses = null;
 var lastJudged = null;
 
-
 function reset() {
     gStrokes = new Map();
     gMapLobby = new Map();
@@ -35,7 +34,6 @@ function reset() {
     gMap.set(gName, document.getElementById("canvas"));
     clear_canvas();
 }
-
 
 function onload_billiards() {
     function connect() {
@@ -77,6 +75,8 @@ function onload_billiards() {
                     chat.removeChild(chat.children[0]);
                 }
                 chat.scrollTop = chat.scrollHeight;
+            } else if (data["Score"]) {
+                    document.getElementById("score").textContent = data["Score"]["score"] || "Click Judge to see score!";
             } else if (data["Guess"]) {
                 let chat = document.getElementById('answers');
                 let line = document.createElement("div");
@@ -181,7 +181,7 @@ function onload_billiards() {
             document.getElementById("lobby-container").style.display = "none";
             document.getElementById("endgame-container").style.display = "block";
             timer.style.display = "none";
-            show_winners();
+            gameend();
         }
         if (gName == state["host"]) {
             document.getElementById("start").style.display = "block";
@@ -193,11 +193,15 @@ function onload_billiards() {
         }
     }
 
-    function show_winners() {
+    function gameend() {
         if (gameover) {
             return;
         }
         gameover = true;
+        sendDrawing();
+        setTimeout(show_winners, 3000);
+    }
+    function show_winners() {
         let namelist = document.getElementById("user-list-3");
         let values = Object.entries(gState["players"]);
         let highscore = Math.max(...values.map(x => x[1].score));
@@ -288,6 +292,7 @@ function onload_billiards() {
     }
 
     function cycle(_backwards) {
+        return;
         if (gState["state"] == "RUNNING") {
             let e = document.querySelector(".user-list-item[selected=\"true\"] + li") || document.querySelector("li.user-list-item:nth-child(1)");
             console.log(e);
@@ -399,7 +404,7 @@ function onload_billiards() {
     }
     function draw_event_handler(e) {
         e.preventDefault();
-        sendDrawing();
+        //sendDrawing();
     }
     let canvas = document.getElementById("canvas");
     canvas.addEventListener("touchend", draw_event_handler);
@@ -420,7 +425,7 @@ function onload_billiards() {
             sendGuess(e.target.value);
             e.target.value = "";
         } else if (e.key  == "Tab") {
-            cycle(e.shiftKey);
+            //cycle(e.shiftKey);
             e.preventDefault();
         }
     });

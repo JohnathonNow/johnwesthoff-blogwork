@@ -216,7 +216,6 @@ function onload_billiards() {
                     if (gstrks) {
                         redraw_other(gMap.get(player).getContext("2d"), gstrks);
                     }
-                    picture.src = gMap.get(player).toDataURL();
                     picture.src = "/drawings/" + player + "-" + gAssign.replaceAll(" ", "-") + ".png"
                     image.onclick = function() {
                         //picture.src = "/drawings/" + 

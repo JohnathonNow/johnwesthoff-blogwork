@@ -208,6 +208,7 @@ pub async fn handle(
                             })
                             .unwrap(),
                         );
+                        gs.broadcast_state();
                     }
                 }
             }

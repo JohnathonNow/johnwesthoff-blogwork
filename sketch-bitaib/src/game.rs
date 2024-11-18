@@ -1,6 +1,6 @@
 use super::packets;
 use futures::{SinkExt, StreamExt};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -17,10 +17,17 @@ type PeerMap = HashMap<String, broadcast::Sender<String>>;
 
 const MAX_NAME_LENGTH: usize = 24;
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Word {
+    pub word: String,
+    pub embedding: Vec<f32>,
+}
+
 pub struct State {
     pub peer_map: PeerMap,
     sendable: SendableState,
-    word_pool: Vec<String>,
+    word_pool: Vec<Word>,
+    embedding: Vec<f32>,
     ai: ImageEmbedding,
 }
 
@@ -36,6 +43,7 @@ impl State {
             peer_map: HashMap::new(),
             sendable: SendableState::new("".into(), timelimit, maxpoints, end_on_time),
             word_pool: Vec::new(),
+            embedding: vec![],
             ai,
         }
     }
@@ -55,20 +63,24 @@ impl State {
     fn score(&self, file: &str) -> f32 {
         let images = vec![file];
         if let Ok(embeddings) = self.ai.embed(images, None) {
-            let mut sum = 0.0;
-            for x in &embeddings[0] {
-                sum += x;
-            }
-            sum
+            embeddings[0]
+                .iter()
+                .zip(self.embedding.iter())
+                .map(|(&x1, &x2)| (x1 - x2).powi(2))
+                .sum()
         }
         else {
             f32::INFINITY
         }
     }
     fn restart(&mut self) {
+        if let Some(word) = self.word_pool.pop() {
+            self.sendable.word = word.word;
+            self.embedding = word.embedding;
+        }
         self.sendable.restart();
     }
-    pub fn add_words(&mut self, words: Vec<String>) {
+    pub fn add_words(&mut self, words: Vec<Word>) {
         self.word_pool.extend(words);
     }
     pub fn tick(&mut self) {
@@ -188,8 +200,8 @@ pub async fn handle(
                         );
                     }
                     packets::Incoming::Image { image } => {
-                        let path = &format!("{}.png", &login_name);
                         let mut gs = game_state.lock().unwrap();
+                        let path = &format!("frontend/drawings/{}-{}.png", &login_name, &gs.sendable.wordname());
                         save_png_from_data_url(&image, path);
                         let score = gs.score(path);
                         println!("Wow, score is {}", score);
@@ -315,6 +327,9 @@ impl SendableState {
     }
     pub fn get_state(&self) -> GameState {
         self.state
+    }
+    pub fn wordname(&self) -> String {
+        self.word.replace(" ", "-")
     }
     fn player_is_active(&self, name: &String) -> bool {
         if let Some(p) = self.players.get(name) {

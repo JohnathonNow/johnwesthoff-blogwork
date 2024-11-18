@@ -134,6 +134,8 @@ function onload_billiards() {
                     }
                     add_drawing(p, []);
                 }
+                gAssign = data["FullState"]["state"]["word"];
+                document.getElementById("word").textContent = "Please draw: " + gAssign;
                 tick(data["FullState"]["state"]);
                 if (data["FullState"]["state"]["state"] == "RUNNING" && !gAssign) {
                     sendAssign();

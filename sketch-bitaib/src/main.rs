@@ -77,8 +77,8 @@ fn with_broadcast(
 }
 
 
-fn read_words(path: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut words: Vec<String> = fs::read_to_string(path)?.split('\n').map(|x| x.to_string()).filter(|x| !x.is_empty()).collect();
+fn read_words(path: &str) -> Result<Vec<game::Word>, Box<dyn Error>> {
+    let mut words: Vec<game::Word> = serde_json::from_str::<Vec<game::Word>>(&fs::read_to_string(path)?)?;
     words.shuffle(&mut thread_rng());
     Ok(words)
 }

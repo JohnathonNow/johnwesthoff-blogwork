@@ -82,6 +82,7 @@ impl State {
     }
     pub fn add_words(&mut self, words: Vec<Word>) {
         self.word_pool.extend(words);
+        self.restart();
     }
     pub fn tick(&mut self) {
         match self.sendable.get_state() {
@@ -206,45 +207,11 @@ pub async fn handle(
                         let score = gs.score(path);
                         println!("Wow, score is {}", score);
                         let mut player = gs.sendable.get_player_mut(&login_name);
-                        let i = player.add_drawing(image.clone());
                         player.score = score;
-                        let _ = gtx.send(
-                            serde_json::to_string(&packets::Outgoing::Image {
-                                username: login_name.clone(),
-                                image: image,
-                                i,
-                            })
-                            .unwrap(),
-                        );
                     }
                     packets::Incoming::Pull { i, username } => {
-                        let _ = tx.send(
-                            serde_json::to_string(&packets::Outgoing::Image {
-                                username: username.clone(),
-                                image: game_state
-                                    .lock()
-                                    .unwrap()
-                                    .sendable
-                                    .get_player_mut(&username)
-                                    .slice(i),
-                                i: i,
-                            })
-                            .unwrap(),
-                        );
                     }
                     packets::Incoming::Undo { i } => {
-                        game_state
-                            .lock()
-                            .unwrap()
-                            .sendable
-                            .get_player_mut(&login_name)
-                            .undo(i);
-                        let _ = gtx.send(
-                            serde_json::to_string(&packets::Outgoing::Undo {
-                                username: login_name.clone(),
-                            })
-                            .unwrap(),
-                        );
                     }
                 }
             }
@@ -343,43 +310,24 @@ impl SendableState {
 #[derive(Serialize, Debug)]
 pub struct PlayerState {
     active: bool,
-    #[serde(skip_serializing)]
-    drawing: String,
     score: f32,
-    /*#[serde(skip_serializing)]
-    word: String,*/
 }
 
 impl PlayerState {
     pub fn new() -> Self {
         Self {
             active: false,
-            drawing: String::new(),
             score: 0.0,
-            //word: "".into(),
         }
     }
     pub fn restart(&mut self) {
-        self.drawing = String::new();
         self.score = 0.0;
     }
     pub fn set_active(&mut self, active: bool) {
         self.active = active
     }
-    pub fn add_drawing(&mut self, drawing: String) -> i32 {
-        let i = self.drawing.len();
-        self.drawing = drawing;
-        i as i32
-    }
     pub fn is_active(&self) -> bool {
         self.active
-    }
-    pub fn undo(&mut self, i: i32) {
-        let newlen = self.drawing.len().saturating_sub(i as usize);
-        self.drawing.truncate(newlen);
-    }
-    pub fn slice(&self, i: i32) -> String {
-        self.drawing.clone()
     }
 }
 

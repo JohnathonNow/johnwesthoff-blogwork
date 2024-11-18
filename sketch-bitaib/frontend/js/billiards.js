@@ -15,6 +15,7 @@ var gameover = false;
 var gImgMap = new Map();
 var gMyGuessers = null;
 var gMyGuesses = null;
+var lastJudged = null;
 
 
 function reset() {
@@ -100,7 +101,7 @@ function onload_billiards() {
                     socket.send(JSON.stringify({ "Pull": { "username": data["Image"]["username"], i: gStrokes.get(data["Image"]["username"]).length } }));
                 }
                 if (data["Image"]["username"] == gName && repull) {
-                    load_drawing(data["Image"]["image"]);
+                    //load_drawing(data["Image"]["image"]);
                     repull = false;
                     redraw();
                 }
@@ -126,6 +127,7 @@ function onload_billiards() {
                     }
                     if (p == gName) {
                         nametag.setAttribute("me", true);
+                        document.getElementById("score").textContent = player["score"] || "Click Judge to see score!";
                     }
                     for (var guesser in player["guess_list"]) {
                         if (p == gName) {
@@ -185,6 +187,10 @@ function onload_billiards() {
             document.getElementById("start").style.display = "block";
             document.getElementById("restart").style.display = "block";
         }
+        let judge = document.getElementById("judge");
+        if (!lastJudged || lastJudged + 10000 < Date.now()) {
+            judge.disabled = false;
+        }
     }
 
     function show_winners() {
@@ -195,6 +201,7 @@ function onload_billiards() {
         let namelist = document.getElementById("user-list-3");
         let values = Object.entries(gState["players"]);
         let highscore = Math.max(...values.map(x => x[1].score));
+        let lowscore = Math.min(...values.map(x => x[1].score));
         for (let i = 0; i < values.length; ++i) {
             setTimeout(function () {
                 let player = values[i][0];
@@ -210,8 +217,9 @@ function onload_billiards() {
                         redraw_other(gMap.get(player).getContext("2d"), gstrks);
                     }
                     picture.src = gMap.get(player).toDataURL();
+                    picture.src = "/drawings/" + player + "-" + gAssign.replaceAll(" ", "-") + ".png"
                     image.onclick = function() {
-                        picture.src = gMap.get(player).toDataURL();
+                        //picture.src = "/drawings/" + 
                         Array.prototype.forEach.call(document.getElementsByClassName("finalimagecontainer"), d=>d.style.display = "none");
                     };
                     image.appendChild(picture);
@@ -219,12 +227,12 @@ function onload_billiards() {
                     gImgMap.set(player, image);
                 } catch (e) {console.log(e)}
                 child.textContent = player + " [0]";
-                if (gState["players"][player]["score"] == highscore) {
+                if (gState["players"][player]["score"] == lowscore) {
                     child.setAttribute("winner", "true");
                 }
                 child.setAttribute("moving", "true");
                 setTimeout(function () {
-                    child.style.width = (10 + (gState["players"][player]["score"] * 80 / highscore)) + "%";
+                    child.style.width = (10 + ((highscore-gState["players"][player]["score"]) * 80 / highscore)) + "%";
                     var tally = 0;
                     var myInterval = setInterval(function () {
                         tally += Math.ceil(gState["players"][player]["score"] / 80);
@@ -271,21 +279,7 @@ function onload_billiards() {
 
     function player_click(e) {
         if (gState["state"] == "RUNNING") {
-            for (let p of gMap.values()) {
-                p.style.display = "none";
-            }
-            for (let p of gMapLobby.values()) {
-                p.setAttribute("selected", "false");
-            }
-            let can = gMap.get(e.target.getAttribute("__player"));
-            gstrks = gStrokes.get(e.target.getAttribute("__player"));
-            can.style.display = "block";
-            see_element(can);
-            if (gstrks) {
-                redraw_other(can.getContext("2d"), gstrks);
-            }
-            redraw();
-            gMapLobby.get(e.target.getAttribute("__player")).setAttribute("selected", "true");
+            return;
         } else if (gState["state"] == "POSTGAME") {
             gImgMap.get(e.target.getAttribute("__player")).style.display = "block";
             gImgMap.get(e.target.getAttribute("__player")).querySelector("img").style.display = "block";
@@ -337,6 +331,7 @@ function onload_billiards() {
     }
 
     function add_drawing(drawer, image) {
+        return;
         if (drawer == gName) {
             return;
         }
@@ -457,4 +452,13 @@ function onload_billiards() {
             timer.value += 1;
         }
     }, 1000);
+    document.getElementById("judge").onclick = function(e) {
+        let now = Date.now();
+        if (lastJudged && lastJudged > now - 10000) {
+            return
+        }
+        lastJudged = now;
+        sendDrawing();
+        e.target.disabled = true;
+    };
 }

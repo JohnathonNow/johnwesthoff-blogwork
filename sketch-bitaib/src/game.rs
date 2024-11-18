@@ -1,16 +1,14 @@
 use super::packets;
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::cmp;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use strsim;
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use base64::{decode};
-use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
+use base64::Engine;
+use fastembed::ImageEmbedding;
 
 pub type GameServerState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
@@ -189,8 +187,6 @@ pub async fn handle(
                             .unwrap(),
                         );
                     }
-                    packets::Incoming::Assign {} => {
-                    }
                     packets::Incoming::Guess { guess } => {
                         let _ = gtx.send(
                             serde_json::to_string(&packets::Outgoing::Guess {
@@ -203,15 +199,10 @@ pub async fn handle(
                     packets::Incoming::Image { image } => {
                         let mut gs = game_state.lock().unwrap();
                         let path = &format!("frontend/drawings/{}-{}.png", &login_name, &gs.sendable.wordname());
-                        save_png_from_data_url(&image, path);
+                        let _ = save_png_from_data_url(&image, path);
                         let score = gs.score(path);
                         println!("Wow, score is {}", score);
-                        let mut player = gs.sendable.get_player_mut(&login_name);
-                        player.score = score;
-                    }
-                    packets::Incoming::Pull { i, username } => {
-                    }
-                    packets::Incoming::Undo { i } => {
+                        gs.sendable.get_player_mut(&login_name).score = score;
                     }
                 }
             }
@@ -298,13 +289,6 @@ impl SendableState {
     pub fn wordname(&self) -> String {
         self.word.replace(" ", "-")
     }
-    fn player_is_active(&self, name: &String) -> bool {
-        if let Some(p) = self.players.get(name) {
-            p.active
-        } else {
-            false
-        }
-    }
 }
 
 #[derive(Serialize, Debug)]
@@ -348,7 +332,7 @@ fn save_png_from_data_url(data_url: &str, output_path: &str) -> std::io::Result<
     };
 
     // Step 2: Decode the base64 string
-    let decoded_data = decode(base64_data).map_err(|_| {
+    let decoded_data = base64::prelude::BASE64_STANDARD.decode(base64_data).map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to decode base64 data")
     })?;
 

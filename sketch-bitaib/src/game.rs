@@ -262,15 +262,27 @@ impl SendableState {
     pub fn restart(&mut self) {
         self.set_state(GameState::LOBBY);
         self.time = 0;
-        for (_name, p) in self.players.iter_mut() {
+        let mut last = None;
+        for (name, p) in self.players.iter_mut() {
             p.restart();
+            if p.active {
+                last = Some(name.clone());
+            }
+        }
+        if let Some(name) = last {
+            self.set_host(&name);
         }
     }
     pub fn get_host(&self) -> Option<&String> {
         self.host.as_ref().map(|x| x)
     }
     pub fn set_host(&mut self, new_host: &str) {
-        if self.host.is_none() {
+        if let Some(p) = &self.host {
+            if !self.players.get(p).unwrap().active {
+                self.host = Some(new_host.to_string());
+            }
+        }
+        else {
             self.host = Some(new_host.to_string());
         }
     }

@@ -217,6 +217,7 @@ pub async fn handle(
         let mut x = game_state.lock().unwrap();
         x.peer_map.remove(&login_name);
         x.sendable.get_player_mut(&login_name).set_active(false);
+        x.sendable.fix_host();
         let _ = gtx.send(
             serde_json::to_string(&packets::Outgoing::FullState { state: &x.sendable }).unwrap(),
         );
@@ -259,12 +260,9 @@ impl SendableState {
             end_on_time
         }
     }
-    pub fn restart(&mut self) {
-        self.set_state(GameState::LOBBY);
-        self.time = 0;
+    pub fn fix_host(&mut self) {
         let mut last = None;
         for (name, p) in self.players.iter_mut() {
-            p.restart();
             if p.active {
                 last = Some(name.clone());
             }
@@ -272,6 +270,15 @@ impl SendableState {
         if let Some(name) = last {
             self.set_host(&name);
         }
+    }
+    pub fn restart(&mut self) {
+        self.set_state(GameState::LOBBY);
+        self.time = 0;
+        self.players.retain(|_name, player| player.active);
+        for (_name, p) in self.players.iter_mut() {
+            p.restart();
+        }
+        self.fix_host();
     }
     pub fn get_host(&self) -> Option<&String> {
         self.host.as_ref().map(|x| x)

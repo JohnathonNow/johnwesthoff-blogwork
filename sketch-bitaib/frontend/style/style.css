@@ -262,3 +262,17 @@ input {
 .user-list-item:first-child {
     margin-top: 10px;
 }
+
+.colorchoice {
+    outline-offset: -1px;
+    outline: 1px solid black;
+    display: inline-block;
+    height: 24px;
+    cursor: pointer;
+    width: 24px;
+}
+
+.colorpicked {
+    outline: 4px solid black;
+    outline-offset: -4px;
+}

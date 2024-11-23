@@ -5,6 +5,25 @@ var redraw = null;
 var redraw_other = null;
 var load_drawing = null;
 
+const gradientColors = [
+  "red",
+  "orange",
+  "yellow",
+  "gold",
+  "green",
+  "lightgreen",
+  "lightblue",
+  "blue",
+  "lightcoral",
+  "pink",
+  "purple",
+  "indigo",
+  "teal",
+  "cyan",
+  "gray",
+  "black"
+];
+
 function clear_canvas() {
     strokes.length = 0;
     context.clearRect(0, 0, context.canvas.width, context.canvas.height);
@@ -33,6 +52,25 @@ function onload_drawing() {
     var mode;
     var TRACEBACK = 0;
 
+    let colorpicker = document.getElementById('colorpicker');
+    for (const c of gradientColors) {
+        let ce = document.createElement("div");
+        ce.style["background-color"] = c;
+        ce.classList.add("colorchoice");
+        ce.onclick = function(e) {
+            mode = DRAW_MODE;
+            color = c;
+            // Select all elements with the class "myClass"
+            const elements = document.querySelectorAll('.colorpicked');
+
+            // Loop through the elements and remove the class
+            for (const element of elements) {
+              element.classList.remove('colorpicked');
+            }
+            ce.classList.add("colorpicked");
+        }
+        colorpicker.appendChild(ce);
+    }
     canvas = document.getElementById('canvas');
     context = canvas.getContext("2d");
     DRAW_MODE = context.globalCompositeOperation;
@@ -46,14 +84,14 @@ function onload_drawing() {
         border = parseInt(border);
         var touches = e.changedTouches;
         if (touches) {
-            addClick((touches[0].pageX - this.offsetLeft - border) / context.canvas.width * 1000,
-                     (touches[0].pageY - this.offsetTop - border) / context.canvas.height * 1000,
+            addClick((touches[0].offsetX) / context.canvas.offsetWidth * 1000,
+                     (touches[0].offsetY) / context.canvas.offsetHeight * 1000,
                      color,
                      size,
                      mode);
         } else {
-            addClick((e.pageX - this.offsetLeft - border) / context.canvas.width * 1000,
-                     (e.pageY - this.offsetTop - border) / context.canvas.height * 1000,
+            addClick((e.offsetX) / context.canvas.offsetWidth * 1000,
+                     (e.offsetY) / context.canvas.offsetHeight * 1000,
                      color,
                      size,
                      mode);
@@ -64,19 +102,20 @@ function onload_drawing() {
     var untouch = function(e){
         e.preventDefault();
         if (paint) {
+            console.log(e.offsetX, context.canvas.width);
             var b = getComputedStyle(this).getPropertyValue('border-left-width');
             b = parseInt(b);
             var touches = e.changedTouches;
             if (touches) {
-                addClick((touches[0].pageX - this.offsetLeft - b) / context.canvas.width * 1000,
-                         (touches[0].pageY - this.offsetTop - b) / context.canvas.height * 1000,
+                addClick((touches[0].offsetX) / context.canvas.offsetWidth * 1000,
+                         (touches[0].offsetY) / context.canvas.offsetHeight * 1000,
                          color,
                          size,
                          mode,
                          true);
             } else {
-                addClick((e.pageX - this.offsetLeft - b) / context.canvas.width * 1000,
-                         (e.pageY - this.offsetTop - b) / context.canvas.height * 1000,
+                addClick((e.offsetX) / context.canvas.offsetWidth * 1000,
+                         (e.offsetY) / context.canvas.offsetHeight * 1000,
                          color,
                          size,
                          mode,
@@ -151,10 +190,6 @@ function onload_drawing() {
     document.getElementById("canvas").ontouchend = document.getElementById("canvas").onmouseleave = document.getElementById("canvas").onmouseup = function(e) {
         redraw();
         paint = false;
-    };
-    document.getElementById("colorpicker").onchange = function(e) { 
-        mode = DRAW_MODE;
-        color = e.target.value;
     };
     document.getElementById("size").onchange = function(e) { 
         size = e.target.value;

@@ -6,7 +6,8 @@ import fileinput
 model = SentenceTransformer('clip-ViT-B-32')
 
 d = list(fileinput.input())
-text_emb = model.encode(d)
+prompt = "an electronic doodle depicting "
+text_emb = model.encode([prompt + x for x in d])
 
 output = [{
         "word": d[i].strip(),

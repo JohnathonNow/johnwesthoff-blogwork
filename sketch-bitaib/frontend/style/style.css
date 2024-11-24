@@ -65,7 +65,7 @@ input {
 }
 
 #answerscontainer {
-    flex: 45%;
+    flex: 20%;
     word-wrap: break-word;
     overflow-x: hidden;
 }
@@ -82,8 +82,8 @@ input {
 }
 
 .image {
-    width: 90%;
-    height: 420px;
+    width: 60vh;
+    height: 60vh;
     border-style: ridge;
     border-width: 5px;
     border-color: gray;
@@ -267,9 +267,9 @@ input {
     outline-offset: -1px;
     outline: 1px solid black;
     display: inline-block;
-    height: 24px;
+    height: 32px;
     cursor: pointer;
-    width: 24px;
+    width: 32px;
 }
 
 .colorpicked {

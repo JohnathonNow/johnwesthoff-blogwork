@@ -204,6 +204,7 @@ pub async fn handle(
                         gs.sendable.get_player_mut(&login_name).score = score;
                         let _ = gtx.send(
                             serde_json::to_string(&packets::Outgoing::Score {
+                                username: login_name.clone(),
                                 score,
                             })
                             .unwrap(),

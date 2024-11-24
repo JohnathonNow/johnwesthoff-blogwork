@@ -22,6 +22,7 @@ pub enum Outgoing<'a> {
         new_name: String,
     },
     Score {
+        username: String,
         score: f32,
     },
 }

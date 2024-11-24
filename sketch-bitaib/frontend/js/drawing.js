@@ -7,19 +7,23 @@ var load_drawing = null;
 
 const gradientColors = [
   "red",
+  "brown",
+  "darkorange",
   "orange",
-  "yellow",
   "gold",
-  "green",
+  "yellow",
   "lightgreen",
+  "limegreen",
+  "green",
+  "teal",
   "lightblue",
+  "cyan",
   "blue",
+  "indigo",
+  "purple",
   "lightcoral",
   "pink",
-  "purple",
-  "indigo",
-  "teal",
-  "cyan",
+  "white",
   "gray",
   "black"
 ];
@@ -84,14 +88,14 @@ function onload_drawing() {
         border = parseInt(border);
         var touches = e.changedTouches;
         if (touches) {
-            addClick((touches[0].offsetX) / context.canvas.offsetWidth * 1000,
-                     (touches[0].offsetY) / context.canvas.offsetHeight * 1000,
+            addClick((touches[0].offsetX + border) / context.canvas.offsetWidth * 1000,
+                     (touches[0].offsetY + border) / context.canvas.offsetHeight * 1000,
                      color,
                      size,
                      mode);
         } else {
-            addClick((e.offsetX) / context.canvas.offsetWidth * 1000,
-                     (e.offsetY) / context.canvas.offsetHeight * 1000,
+            addClick((e.offsetX + border) / context.canvas.offsetWidth * 1000,
+                     (e.offsetY + border) / context.canvas.offsetHeight * 1000,
                      color,
                      size,
                      mode);
@@ -107,15 +111,15 @@ function onload_drawing() {
             b = parseInt(b);
             var touches = e.changedTouches;
             if (touches) {
-                addClick((touches[0].offsetX) / context.canvas.offsetWidth * 1000,
-                         (touches[0].offsetY) / context.canvas.offsetHeight * 1000,
+                addClick((touches[0].offsetX + b) / context.canvas.offsetWidth * 1000,
+                         (touches[0].offsetY + b) / context.canvas.offsetHeight * 1000,
                          color,
                          size,
                          mode,
                          true);
             } else {
-                addClick((e.offsetX) / context.canvas.offsetWidth * 1000,
-                         (e.offsetY) / context.canvas.offsetHeight * 1000,
+                addClick((e.offsetX + b) / context.canvas.offsetWidth * 1000,
+                         (e.offsetY + b) / context.canvas.offsetHeight * 1000,
                          color,
                          size,
                          mode,

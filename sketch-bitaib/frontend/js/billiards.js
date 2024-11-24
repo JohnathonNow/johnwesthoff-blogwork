@@ -75,7 +75,7 @@ function onload_billiards() {
                     chat.removeChild(chat.children[0]);
                 }
                 chat.scrollTop = chat.scrollHeight;
-            } else if (data["Score"]) {
+            } else if (data["Score"] && data["Score"]["username"] == gName) {
                     document.getElementById("score").textContent = data["Score"]["score"] || "Click Judge to see score!";
             } else if (data["Guess"]) {
                 let chat = document.getElementById('answers');

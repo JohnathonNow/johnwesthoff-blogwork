@@ -9,6 +9,7 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use base64::Engine;
 use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
+use std::fs;
 
 pub type GameServerState = Arc<Mutex<State>>;
 type PeerMap = HashMap<String, broadcast::Sender<String>>;
@@ -21,11 +22,19 @@ pub struct Word {
     pub embedding: Vec<f32>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Options {
+    pub offset: Vec<f32>,
+    pub blank: Vec<f32>,
+}
+
 pub struct State {
     pub peer_map: PeerMap,
     sendable: SendableState,
     word_pool: Vec<Word>,
     embedding: Vec<f32>,
+    offset_embedding: Vec<f32>,
+    blank_embedding: Vec<f32>,
     ai: ImageEmbedding,
 }
 
@@ -35,12 +44,16 @@ impl State {
         let ai = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::ClipVitB32).with_show_download_progress(true),
         ).unwrap(); //we can die without the model at load
+        //TODO: improve this?
+        let config: Options = serde_json::from_str::<Options>(&fs::read_to_string("./resources/offsets.json").unwrap()).unwrap();
 
         Self {
             peer_map: HashMap::new(),
             sendable: SendableState::new("".into(), timelimit, maxpoints, end_on_time),
             word_pool: Vec::new(),
             embedding: vec![],
+            offset_embedding: config.offset,
+            blank_embedding: config.blank,
             ai,
         }
     }
@@ -62,8 +75,10 @@ impl State {
         if let Ok(embeddings) = self.ai.embed(images, None) {
             embeddings[0]
                 .iter()
+                .zip(self.offset_embedding.iter())
+                .map(|(&x1, &x2)| (x1 - x2))
                 .zip(self.embedding.iter())
-                .map(|(&x1, &x2)| (x1 - x2).powi(2))
+                .map(|(x1, &x2)| (x1 - x2).powi(2))
                 .sum()
         }
         else {
@@ -75,6 +90,13 @@ impl State {
             self.sendable.word = word.word;
             self.embedding = word.embedding;
         }
+        self.sendable.bad_score = self.blank_embedding
+            .iter()
+            .zip(self.offset_embedding.iter())
+            .map(|(&x1, &x2)| (x1 - x2))
+            .zip(self.embedding.iter())
+            .map(|(x1, &x2)| (x1 - x2).powi(2))
+            .sum();
         self.sendable.restart();
     }
     pub fn add_words(&mut self, words: Vec<Word>) {
@@ -246,6 +268,7 @@ pub struct SendableState {
     timelimit: i32,
     maxpoints: i32,
     end_on_time: bool,
+    bad_score: f32,
 }
 
 impl SendableState {
@@ -258,7 +281,8 @@ impl SendableState {
             time: 0,
             timelimit,
             maxpoints,
-            end_on_time
+            end_on_time,
+            bad_score: 1000.0,
         }
     }
     pub fn fix_host(&mut self) {

@@ -22,3 +22,11 @@ Guesses:
     game_id     INTEGER
     guesser     TEXT
     guess       TEXT
+
+
+Todo:
+[ ] fix the above lies  
+[ ] improve performance of redraw by keeping track of the last drawing action  
+[ ] add custom cursors  
+[ ] improve mouse exiting / entering drawing area  
+

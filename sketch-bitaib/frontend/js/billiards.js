@@ -127,7 +127,9 @@ function onload_billiards() {
                     }
                     if (p == gName) {
                         nametag.setAttribute("me", true);
-                        document.getElementById("score").textContent = player["score"] || "Click Judge to see score!";
+                        if (player["score"]) {
+                            document.getElementById("score").textContent = player["score"];
+                        }
                     }
                     for (var guesser in player["guess_list"]) {
                         if (p == gName) {

@@ -38,7 +38,7 @@ function reset() {
 function onload_billiards() {
     function connect() {
         reset();
-        socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName));
+        socket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/chat?name=' + encodeURIComponent(gName) + "&lobby=default");
         //socket = new WebSocket('ws://' + window.location.hostname + ':3030/chat');
         console.log(socket)
         // Event listener for when the WebSocket connection is established

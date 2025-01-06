@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<head>
+    <title>Beauty is in the AI of the Beholder</title>
+    <script src="/js/drawing.js"></script>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/style/style.css">
+</head>
+
+<body onload="onload_drawing();">
+    <div align="center">
+        <h1>Beauty is in the AI of the Beholder</h1>
+    </div>
+    <div align="center" id="game" style="display: block;">
+        <meter id="timer" min="0" max="120"></meter>
+        <div id="gamecontainer">
+            <div id="progress-container">
+                <div id="drawing-container">
+                    <div id="word">
+                        <br>
+                    </div>
+                    <div id="score">
+                        <br>
+                    </div>
+                    <div id="gallery">
+                        <div id="drawing">
+                            <canvas class="image" id="canvas" style="display: block;"></canvas>
+                        </div>
+                    </div>
+                    <div id="controls"> <br>
+                        <p>Color: <div id="colorpicker"></div></p>
+                        <p>Stroke: <input type="range" id="size" value="5" min="1" max="50"></p>
+                        <button id="erase">Eraser</button>
+                        <button id="pencil">Pencil</button>
+                        <button id="flood">Flood</button>
+                        <button id="undo">Undo</button>
+                        <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>

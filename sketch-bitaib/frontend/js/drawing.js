@@ -100,20 +100,21 @@ function onload_drawing() {
     var touch = function(e){
         e.preventDefault();
         e.stopPropagation();
-
         TRACEBACK = 0;
         paint = true;
-        var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
         border = parseInt(border);
-        var touches = e.changedTouches;
+        var touches = e.touches;
         if (touches) {
-            addClick((touches[0].offsetX + border) / context.canvas.offsetWidth * 1000,
-                (touches[0].offsetY + border) / context.canvas.offsetHeight * 1000,
+            var border = getComputedStyle(this).getPropertyValue('border-left-width');
+            var rect = e.target.getBoundingClientRect();
+            addClick((touches[0].pageX + border + rect.left) / context.canvas.offsetWidth * 1000,
+                (touches[0].pageY + border + rect.top) / context.canvas.offsetHeight * 1000,
                 color,
                 size,
                 mode,
                 tool);
         } else {
+            var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
             if (tool == "flood") {
                 //floodFill(context, e.offsetX + border, e.offsetY + border, color);
             }
@@ -138,13 +139,13 @@ function onload_drawing() {
     var untouch = function(e){
         e.preventDefault();
         if (paint) {
-            console.log(e.offsetX, context.canvas.width);
             var b = getComputedStyle(this).getPropertyValue('border-left-width');
             b = parseInt(b);
             var touches = e.changedTouches;
             if (touches) {
-                addClick((touches[0].offsetX + b) / context.canvas.offsetWidth * 1000,
-                    (touches[0].offsetY + b) / context.canvas.offsetHeight * 1000,
+                var rect = e.target.getBoundingClientRect();
+                addClick((touches[0].pageX + b - rect.left) / context.canvas.offsetWidth * 1000,
+                    (touches[0].pageY + b - rect.top) / context.canvas.offsetHeight * 1000,
                     color,
                     size,
                     mode,
@@ -345,6 +346,7 @@ function floodFill(ctx, x, y, fillColor) {
     document.getElementById("canvas").onmouseenter = maybetouch;
     document.getElementById("canvas").ontouchmove = document.getElementById("canvas").onmousemove = untouch;
     document.getElementById("canvas").ontouchend = document.getElementById("canvas").onmouseleave = document.getElementById("canvas").onmouseup = function(e) {
+        e.preventDefault();
         redraw();
         paint = false;
 

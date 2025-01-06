@@ -4,8 +4,12 @@
     display: inline-block;
 }
 
+
 body{
-    overflow-x:hidden;
+    overflow-x:hidden !important;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 #colorpicker {
@@ -19,17 +23,17 @@ body{
     padding: 0;
 }
 input {
-	display: block;
-	width: 100%;
-	padding: .375rem .75rem;
-	font-size: 1rem;
-	line-height: 1.5;
-	color: #495057;
-	background-color: #fff;
-	background-clip: padding-box;
-	border: 1px solid #ced4da;
-	border-radius: .25rem;
-	transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
 
 #guess {
@@ -53,7 +57,7 @@ input {
 }
 
 #drawing-container {
-    flex: 90%;
+    flex: 80%;
 }
 
 .full {
@@ -82,8 +86,8 @@ input {
 }
 
 .image {
-    width: 60vh;
-    height: 60vh;
+    width: 100%;
+    height: auto;
     border-style: ridge;
     border-width: 5px;
     border-color: gray;
@@ -122,8 +126,6 @@ input {
 .image[active="false"] {
     opacity: 0.5;
 }
-
-
 
 #user-list-1>.user-list-item[guessed="true"]::after {
     content: "✔️";
@@ -191,7 +193,7 @@ input {
 }
 
 #game {
-    display: none;
+    width: 100%;
 }
 
 #lobby-container {
@@ -267,12 +269,20 @@ input {
     outline-offset: -1px;
     outline: 1px solid black;
     display: inline-block;
-    height: 32px;
     cursor: pointer;
-    width: 32px;
+    height: 128px;
+    width: 128px;
 }
 
 .colorpicked {
-    outline: 4px solid black;
-    outline-offset: -4px;
+    outline: 8px solid black;
+    outline-offset: -8px;
+}
+
+button {
+    font-size: 48px;
+}
+
+meter {
+    width: 100%;
 }

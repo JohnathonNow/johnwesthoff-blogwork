@@ -355,7 +355,12 @@ function floodFill(ctx, x, y, fillColor) {
         size = e.target.value;
     };
     document.getElementById("undo").onclick = undo;
-    document.getElementById("pencil").onclick = pencil;
-    document.getElementById("flood").onclick = flood;
-    document.getElementById("erase").onclick = erase;
+    //document.getElementById("pencil").onclick = pencil;
+    //document.getElementById("flood").onclick = flood;
+    //document.getElementById("erase").onclick = erase;
+    window.onresize = function(e) {
+        canvas.style.height = canvas.clientWidth + "px";        
+    };
+    canvas.style.height = canvas.clientWidth + "px";        
+    console.log(canvas.clientWidth);
 }

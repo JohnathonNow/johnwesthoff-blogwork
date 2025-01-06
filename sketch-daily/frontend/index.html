@@ -21,10 +21,6 @@
         <meter id="timer" min="0" max="120"></meter>
         <div id="gamecontainer">
             <div id="progress-container">
-                <div id="player-container">
-                    <h2>Players:</h2>
-                    <ul class="user-list" id="user-list-1"></ul>
-                </div>
                 <div id="drawing-container">
                     <div id="word">
                         <br>
@@ -38,34 +34,14 @@
                         </div>
                     </div>
                     <div id="controls"> <br>
-                        <p>Color: <div id="colorpicker"></div></p>
-                        <p>Stroke: <input type="range" id="size" value="5" min="1" max="50"></p>
-                        <button id="erase">Eraser</button>
-                        <button id="pencil">Pencil</button>
-                        <button id="flood">Flood</button>
+                        <p style="font-size: 48px">Color: <div id="colorpicker"></div></p>
+                        <p style="font-size: 48px">Stroke: <input type="range" id="size" value="5" min="1" max="50"></p>
                         <button id="undo">Undo</button>
                         <button id="judge">Judge</button>
                         <br>
                     </div>
                 </div>
             </div>
-            <div id="lobby-container">
-                <h2>Players:</h2>
-                <ul class="user-list" id="user-list-2"></ul>
-                <button id="start" style="display: none;">Start</button>
-            </div>
-            <div id="endgame-container">
-                <h2>GG! EZ!</h2>
-                <ul class="user-list" id="user-list-3"></ul>
-                <button id="restart" style="display: none;">Restart</button>
-            </div>
-            <div id="answerscontainer">
-                <div id="dummy"> <input type="text" name="FirstName" id="guess" value="" placeholder="Guess or chat:" maxlength="256"> </div>
-                <div id="answers"> </div>
-            </div>
-            <div id="finalgallery"></div>
         </div>
-
     </div>
-
 </body>

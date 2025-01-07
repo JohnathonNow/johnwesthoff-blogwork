@@ -10,7 +10,7 @@ chrono = "0.4"
 priority-queue = "1.2.3"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.6"
-warp = "0.3"
+warp = { version = "0.3", features = ["tls"] }
 rand = "0.8"
 futures = { version = "0.3", default-features=false}
 serde = { version = "1.0", features = ["derive"] }

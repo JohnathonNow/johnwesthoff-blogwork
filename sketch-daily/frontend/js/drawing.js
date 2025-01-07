@@ -316,6 +316,8 @@ function floodFill(ctx, x, y, fillColor) {
     redraw_other = function(ctx, stks){
         //return;
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.fillStyle = 'white'; 
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
         ctx.lineJoin = "round";
 
         for(var i=0; i < stks.length; i++) {		

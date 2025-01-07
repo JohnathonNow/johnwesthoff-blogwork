@@ -72,8 +72,22 @@ function onload_billiards() {
                 "Content-Type": "application/json",
               }}).then((response) => {
                 return response.json();
-            }).then((data) => {
-                document.getElementById("score").textContent = data["Score"]["score"];
+            }).then((info) => {
+                document.getElementById("score").textContent = info["Score"]["score"];
+                const offscreen = new OffscreenCanvas(512 + 8 + 8, 512 + 24 + 8 + 8);
+                const octx = offscreen.getContext("2d");
+                octx.fillStyle = 'white'; 
+                octx.fillRect(0, 0, octx.canvas.width, octx.canvas.height); 
+                octx.drawImage(canvas, 8, 24 + 8, 512, 512);
+                octx.fillStyle = 'black'; 
+                octx.textAlign = 'center'; 
+                octx.font = "12px serif";
+                octx.fillText("I drew " + gWord + " and scored " + info["Score"]["score"].toFixed(2), octx.canvas.width / 2, 16);
+                const blob = offscreen.convertToBlob().then((blob) => {
+                const clip = [new ClipboardItem({ [blob.type]: blob })];
+                navigator.clipboard.write(clip).then((e) => console.log(e));
+                }
+                )
             });
         }
     }

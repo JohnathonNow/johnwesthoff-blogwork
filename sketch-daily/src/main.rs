@@ -54,7 +54,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             game_state.lock().unwrap().tick();
         }
     });
-    let server = task::spawn(async move {warp::serve(routes).run(([0, 0, 0, 0], cliargs.port)).await;});
+    let server = if let (Some(cert), Some(key)) = (cliargs.cert, cliargs.key) {
+        task::spawn(async move {warp::serve(routes).tls().cert_path(cert).key_path(key).run(([0, 0, 0, 0], cliargs.port)).await;})
+    } else {
+        task::spawn(async move {warp::serve(routes).run(([0, 0, 0, 0], cliargs.port)).await;})
+    };
 
     (forever.await?, server.await?);
 

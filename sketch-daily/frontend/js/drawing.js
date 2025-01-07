@@ -107,8 +107,8 @@ function onload_drawing() {
         if (touches) {
             var border = getComputedStyle(this).getPropertyValue('border-left-width');
             var rect = e.target.getBoundingClientRect();
-            addClick((touches[0].pageX + border + rect.left) / context.canvas.offsetWidth * 1000,
-                (touches[0].pageY + border + rect.top) / context.canvas.offsetHeight * 1000,
+            addClick((touches[0].clientX + border + rect.left) / context.canvas.offsetWidth * 1000,
+                (touches[0].clientY + border + rect.top) / context.canvas.offsetHeight * 1000,
                 color,
                 size,
                 mode,
@@ -143,9 +143,10 @@ function onload_drawing() {
             b = parseInt(b);
             var touches = e.changedTouches;
             if (touches) {
+                console.log(touches);
                 var rect = e.target.getBoundingClientRect();
-                addClick((touches[0].pageX + b - rect.left) / context.canvas.offsetWidth * 1000,
-                    (touches[0].pageY + b - rect.top) / context.canvas.offsetHeight * 1000,
+                addClick((touches[0].clientX + b - rect.left) / context.canvas.offsetWidth * 1000,
+                    (touches[0].clientY + b - rect.top) / context.canvas.offsetHeight * 1000,
                     color,
                     size,
                     mode,

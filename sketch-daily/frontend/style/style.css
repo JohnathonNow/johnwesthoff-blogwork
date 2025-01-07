@@ -278,8 +278,8 @@ input {
     outline: 1px solid black;
     display: inline-block;
     cursor: pointer;
-    height: 128px;
-    width: 128px;
+    height: 100px;
+    width: 100px;
 }
 
 .colorpicked {

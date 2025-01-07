@@ -26,6 +26,12 @@ function reset() {
 }
 
 function onload_billiards() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const todayFormatted = `${year} ${month} ${day}`;
+
     function tick(state) {
         gState = state;
         let timer = document.getElementById("timer");
@@ -94,6 +100,8 @@ function onload_billiards() {
     
     function draw_event_handler(e) {
         e.preventDefault();
+        //localStorage.setItem("drawing-" + todayFormatted, canvas.toDataURL());
+        localStorage.setItem("drawing-" + todayFormatted, JSON.stringify(strokes));
         //sendDrawing();
     }
     let canvas = document.getElementById("canvas");
@@ -136,4 +144,18 @@ function onload_billiards() {
         console.log(data);
         document.getElementById("word").textContent = gWord = data;
     });
+    const olddraw = localStorage.getItem("drawing-" + todayFormatted);
+    if (olddraw) {
+        let d = JSON.parse(olddraw);
+        strokes = strokes.concat(d);
+        for (var i = 0; i < strokes.length; ++i) {
+            if (strokes[i].x == null) {
+                strokes[i].x = NaN;
+            }
+            if (strokes[i].y == null) {
+                strokes[i].y = NaN;
+            }
+        }
+        redraw();
+    }
 }

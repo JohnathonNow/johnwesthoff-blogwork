@@ -299,6 +299,9 @@ function floodFill(ctx, x, y, fillColor) {
 
     function addClick(x, y, c, s, m, t, dragging)
     {
+        if (x == null) {
+            return;
+        }
         strokes.push({ "x": x,
             "y": y,
             "c": c,

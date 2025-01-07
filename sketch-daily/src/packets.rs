@@ -10,19 +10,15 @@ pub enum Incoming {
 }
 
 #[derive(Serialize, Debug)]
-pub enum Outgoing<'a> {
+pub enum Outgoing {
     Guess {
         username: String,
         guess: String,
-    },
-    FullState {
-        state: &'a game::SendableState,
     },
     NewName {
         new_name: String,
     },
     Score {
-        username: String,
         score: f32,
     },
 }

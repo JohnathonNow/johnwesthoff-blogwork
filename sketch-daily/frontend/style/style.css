@@ -74,6 +74,14 @@ input {
     overflow-x: hidden;
 }
 
+#word {
+    font-size: 24px;
+}
+
+#score {
+    font-size: 24px;
+}
+
 #dummy {
     display: flex;
 }
@@ -86,7 +94,7 @@ input {
 }
 
 .image {
-    width: 100%;
+    width: 90%;
     height: auto;
     border-style: ridge;
     border-width: 5px;

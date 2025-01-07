@@ -8,17 +8,7 @@
 </head>
 
 <body onload="onload_drawing(); onload_billiards();">
-    <div align="center">
-        <h1>Beauty is in the AI of the Beholder</h1>
-    </div>
-    <div id="login" align="center">
-        <h3 class="full">Login</h3>
-        <div class="flex">
-            <div class="full"> Enter your name: </div> <input type="text" class="full" maxlength="24" name="FirstName" id="name" value="">
-        </div>
-    </div>
-    <div align="center" id="game">
-        <meter id="timer" min="0" max="120"></meter>
+    <div align="center" id="game" style="display: block;">
         <div id="gamecontainer">
             <div id="progress-container">
                 <div id="drawing-container">
@@ -34,8 +24,8 @@
                         </div>
                     </div>
                     <div id="controls"> <br>
-                        <p style="font-size: 48px">Color: <div id="colorpicker"></div></p>
-                        <p style="font-size: 48px">Stroke: <input type="range" id="size" value="5" min="1" max="50"></p>
+                        <p style="font-size: 24px">Color: <div id="colorpicker"></div></p>
+                        <p style="font-size: 24px">Stroke: <input type="range" id="size" value="5" min="1" max="50"></p>
                         <button id="undo">Undo</button>
                         <button id="judge">Judge</button>
                         <br>
@@ -43,5 +33,7 @@
                 </div>
             </div>
         </div>
+
     </div>
+
 </body>

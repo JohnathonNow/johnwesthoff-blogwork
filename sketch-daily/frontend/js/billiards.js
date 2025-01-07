@@ -25,6 +25,13 @@ function reset() {
     clear_canvas();
 }
 
+function toTitleCase(str) {
+      return str.replace(
+              /\w\S*/g,
+              text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+            );
+}
+
 function onload_billiards() {
 
     function tick(state) {
@@ -86,7 +93,14 @@ function onload_billiards() {
                 octx.fillText("I drew " + gWord + " and scored " + info["Score"]["score"].toFixed(2), octx.canvas.width / 2, 16);
                 const blob = offscreen.convertToBlob().then((blob) => {
                 const clip = [new ClipboardItem({ [blob.type]: blob })];
-                navigator.clipboard.write(clip).then((e) => console.log(e));
+                const file = new File([blob], gWord + '.png', { type: 'image/png' });
+                navigator.share({
+                    files: [file],
+                    title: toTitleCase(gWord),
+                    text: 'I scored ' + info["Score"]["score"].toFixed(2) + "!",
+                    url: "" + window.location
+                  }).then((e) => console.log(e));
+                //navigator.clipboard.write(clip).then((e) => console.log(e));
                 }
                 )
             });

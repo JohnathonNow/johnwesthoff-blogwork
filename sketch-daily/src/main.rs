@@ -17,8 +17,6 @@ mod args;
 
 #[derive(Deserialize)]
 struct Query {
-    lobby: String,
-    name: String,
 }
 
 #[tokio::main]
@@ -28,25 +26,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     inner_game_state.add_words(read_words(&cliargs.words)?);
     let game_state: game::GameServerState = Arc::new(Mutex::new(inner_game_state));
 
-    let (tx, mut _rx) = broadcast::channel::<String>(100);
 
-    let game_clone = game_state.clone();
-    task::spawn(async move {
-        while let Ok(msg) = _rx.recv().await {
-            for (_, sender) in game_clone.lock().unwrap().peer_map.iter() {
-                let _ = sender.send(msg.clone());
-            }
-        }
-    });
-
-    let ws_route = warp::path("chat")
-        .and(warp::query::<Query>())
-        .and(warp::ws())
+    // TODO: return today's word
+    let ws_route = warp::path("word")
         .and(with_game_state(game_state.clone()))
-        .and(with_broadcast(tx.clone()))
-        .map(|query: Query, ws: warp::ws::Ws, peer_map, tx| {
-            ws.on_upgrade(move |socket| game::handle(socket, peer_map, tx, query.lobby, query.name))
+        .map(|_game_state| {
+            "test"
         });
+
+    // TODO: add route for scoring
 
     let static_files = warp::fs::dir("frontend");
     let routes = ws_route.or(static_files);

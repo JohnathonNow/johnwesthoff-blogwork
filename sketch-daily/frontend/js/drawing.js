@@ -329,8 +329,12 @@ function floodFill(ctx, x, y, fillColor) {
                 floodFill(ctx, stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000, cssTo32BitColor(stks[i]["c"]));
             } else {
                 ctx.strokeStyle = stks[i]["c"];
+                ctx.fillStyle = stks[i]["c"];
                 ctx.lineWidth = stks[i]["s"];
                 ctx.globalCompositeOperation = stks[i]["m"];
+                ctx.beginPath();
+                ctx.arc(stks[i]["x"]*ctx.canvas.width/1000-1, stks[i]["y"]*ctx.canvas.height/1000, stks[i]["s"] / 2, 0, 7);
+                ctx.fill();
                 ctx.beginPath();
                 if(stks[i]["d"] && i){
                     ctx.moveTo(stks[i-1]["x"]*ctx.canvas.width/1000, stks[i-1]["y"]*ctx.canvas.height/1000);

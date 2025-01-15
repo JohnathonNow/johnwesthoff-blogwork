@@ -370,9 +370,10 @@ function floodFill(ctx, x, y, fillColor) {
     //document.getElementById("pencil").onclick = pencil;
     //document.getElementById("flood").onclick = flood;
     //document.getElementById("erase").onclick = erase;
-    window.onresize = function(e) {
+    window.addEventListener("resize", function(e) {
+        console.log("resized!");
         canvas.style.height = canvas.clientWidth + "px";        
-    };
+    });
     canvas.style.height = canvas.clientWidth + "px";        
     console.log(canvas.clientWidth);
 }

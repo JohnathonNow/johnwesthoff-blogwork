@@ -105,6 +105,12 @@ input {
     display: none;
 }
 
+@media (orientation: landscape) {
+    .image {
+        width: 70vh;
+    }
+}
+
 .finalimagecontainer {
     width: 100vw;
     height: 100vh;

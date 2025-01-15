@@ -26,15 +26,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     inner_game_state.add_words(read_words(&cliargs.words)?);
     let game_state: game::GameServerState = Arc::new(Mutex::new(inner_game_state));
 
-
-    // TODO: return today's word
     let ws_route = warp::path("word")
         .and(with_game_state(game_state.clone()))
         .map(|game_state| {
             game::word(game_state)
         });
 
-    // TODO: add route for scoring
     let judge = warp::path("judge")
         .and(warp::body::content_length_limit(1024 * 1024 * 32))
         .and(warp::body::json())
@@ -43,8 +40,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             warp::reply::json(&game::judge(game_state, map.get("image").unwrap_or(&"".to_string())))
         });
 
+    let info = warp::path("info")
+        .and(warp::path::param())
+        .and(with_game_state(game_state.clone()))
+        .map(|id: String, game_state| {
+            warp::reply::json(&game::info(game_state, &id))
+        });
+
     let static_files = warp::fs::dir("frontend");
-    let routes = ws_route.or(static_files).or(judge);
+    let routes = ws_route.or(static_files).or(judge).or(info);
 
     let forever = task::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(1000));

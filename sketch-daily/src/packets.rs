@@ -20,5 +20,11 @@ pub enum Outgoing {
     },
     Score {
         score: f32,
+        id: String,
+    },
+    Info {
+        prompt: String,
+        score: f32,
+        path: String,
     },
 }

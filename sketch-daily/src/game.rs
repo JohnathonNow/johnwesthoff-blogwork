@@ -12,6 +12,8 @@ use base64::Engine;
 use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
 use std::fs;
 use uuid::Uuid;
+use rusqlite::{Connection, Result};
+use sqids::Sqids;
 
 
 const MAX: f32 = 175.0;
@@ -37,6 +39,7 @@ pub struct State {
     offset_embedding: Vec<f32>,
     blank_embedding: Vec<f32>,
     ai: ImageEmbedding,
+    db: Connection,
 }
 
 impl State {
@@ -47,7 +50,16 @@ impl State {
         ).unwrap(); //we can die without the model at load
         //TODO: improve this?
         let config: Options = serde_json::from_str::<Options>(&fs::read_to_string("./resources/offsets.json").unwrap()).unwrap();
-
+        let db = Connection::open("./resources/saves.db").unwrap();
+        db.execute( //lol OK Brian Kelly
+            "CREATE TABLE IF NOT EXISTS saves(
+                id      INTEGER PRIMARY KEY,
+                prompt  TEXT,
+                path    TEXT,
+                score   REAL
+            )",
+            ()
+        ).unwrap();
         Self {
             word_pool: HashMap::new(),
             embedding: vec![],
@@ -55,6 +67,7 @@ impl State {
             offset_embedding: config.offset,
             blank_embedding: config.blank,
             ai,
+            db
         }
     }
     fn score(&self, file: &str) -> f32 {
@@ -94,20 +107,41 @@ pub fn word(game_state: GameServerState) -> String {
 }
 
 pub fn judge(game_state: GameServerState, image: &str) -> packets::Outgoing {
+    //TODO: No unwraps
     let mut gs = game_state.lock().unwrap();
     let path = &format!("frontend/drawings/{}-{}.png", &gs.word, &Uuid::new_v4());
     let _ = save_png_from_data_url(&image, path);
-    let score = gs.score(path);
+    let score = f32::max(MAX - gs.score(path), 0.0);
+    let mut prepared = gs.db.prepare(
+        "INSERT INTO saves (prompt, path, score)
+        VALUES (?, ?, ?) RETURNING id"
+    ).unwrap();
+    let mut rows = prepared.query((&gs.word, &path, score)).unwrap();
+    let id = rows.next().unwrap().unwrap().get(0).unwrap();
     println!("Wow, score is {}", score);
+    let sqids = Sqids::default();
+    let id = sqids.encode(&[id]).unwrap();
     packets::Outgoing::Score {
-        score: f32::max(MAX - score, 0.0),
+        score,
+        id
     }
 }
 
-fn truncate(s: &str, max_chars: usize) -> &str {
-    match s.char_indices().nth(max_chars) {
-        None => s,
-        Some((idx, _)) => &s[..idx],
+pub fn info(game_state: GameServerState, id: &str) -> packets::Outgoing {
+    //TODO: No unwraps
+    let sqids = Sqids::default();
+    let id = sqids.decode(&id)[0];
+    let mut gs = game_state.lock().unwrap();
+    let mut prepared = gs.db.prepare(
+        "SELECT prompt, path, score FROM saves 
+        WHERE id = ?"
+    ).unwrap();
+    let mut rows = prepared.query([&id]).unwrap();
+    let mut row = rows.next().unwrap().unwrap();
+    packets::Outgoing::Info {
+        prompt: row.get(0).unwrap(),
+        path: row.get(1).unwrap(),
+        score: row.get(2).unwrap(),
     }
 }
 

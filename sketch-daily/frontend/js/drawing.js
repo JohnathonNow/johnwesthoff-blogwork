@@ -94,6 +94,8 @@ function onload_drawing() {
         colorpicker.appendChild(ce);
     }
     canvas = document.getElementById('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
     context = canvas.getContext("2d");
     DRAW_MODE = context.globalCompositeOperation;
     mode = DRAW_MODE;

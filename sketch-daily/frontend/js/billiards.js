@@ -92,13 +92,15 @@ function onload_billiards() {
                 octx.font = "12px serif";
                 octx.fillText("I drew " + gWord + " and scored " + info["Score"]["score"].toFixed(2), octx.canvas.width / 2, 16);
                 const blob = offscreen.convertToBlob().then((blob) => {
-                const clip = [new ClipboardItem({ [blob.type]: blob })];
-                const file = new File([blob], gWord + '.png', { type: 'image/png' });
+                //const clip = [new ClipboardItem({ [blob.type]: blob })];
+                //const file = new File([blob], gWord + '.png', { type: 'image/png' });
+                const furl = URL.createObjectURL(blob);
+                const dl = document.createElement("a");
+                dl.href = furl;
+                dl.download = gWord + ".png";
+                dl.click();
                 navigator.share({
-                    files: [file],
-                    title: toTitleCase(gWord),
-                    text: 'I scored ' + info["Score"]["score"].toFixed(2) + "!",
-                    url: "" + window.location
+                    url: "https://ca.johnwesthoff.com/results/" + info["Score"]["id"]
                   }).then((e) => console.log(e));
                 //navigator.clipboard.write(clip).then((e) => console.log(e));
                 }

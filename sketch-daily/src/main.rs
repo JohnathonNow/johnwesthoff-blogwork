@@ -55,7 +55,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .and(warp::path::param())
         .and(with_game_state(game_state.clone()))
         .map(|id: String, game_state| {
-            warp::reply::json(&game::info(game_state, &id))
+            let (prompt, path, score) = game::info(game_state, &id);
+            let Out = packets::Outgoing::Info { prompt, score, path };
+            warp::reply::json(&Out)
         });
 
     let hb = Arc::new(hb);
@@ -64,19 +66,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .and(warp::path::param())
         .and(with_game_state(game_state.clone()))
         .map(|id: String, game_state| {
-            let Info = game::info(game_state, &id);
+            let (prompt, path, score) = game::info(game_state, &id);
             WithTemplate {
                 name: "results",
                 value: json!({
-                    "prompt": &Info.prompt,
-                    "score": Info.score,
-                    "path": &Info.path.strip_prefix("frontend").unwrap_or("")
+                    "prompt": &prompt,
+                    "score": score,
+                    "path": &path.strip_prefix("frontend").unwrap_or(&path),
+                    "base": format!("https://ca.johnwesthoff.com"),
                 }),
             }
         }).map(handlebars);
 
     let static_files = warp::fs::dir("frontend");
-    let routes = ws_route.or(static_files).or(judge).or(info);
+    let routes = ws_route.or(static_files).or(judge).or(info).or(results);
 
     let forever = task::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(1000));

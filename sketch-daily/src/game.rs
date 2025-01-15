@@ -127,7 +127,7 @@ pub fn judge(game_state: GameServerState, image: &str) -> packets::Outgoing {
     }
 }
 
-pub fn info(game_state: GameServerState, id: &str) -> packets::Outgoing {
+pub fn info(game_state: GameServerState, id: &str) -> (String, String, f32) {
     //TODO: No unwraps
     let sqids = Sqids::default();
     let id = sqids.decode(&id)[0];
@@ -138,11 +138,11 @@ pub fn info(game_state: GameServerState, id: &str) -> packets::Outgoing {
     ).unwrap();
     let mut rows = prepared.query([&id]).unwrap();
     let mut row = rows.next().unwrap().unwrap();
-    packets::Outgoing::Info {
-        prompt: row.get(0).unwrap(),
-        path: row.get(1).unwrap(),
-        score: row.get(2).unwrap(),
-    }
+    (
+        row.get(0).unwrap(),
+        row.get(1).unwrap(),
+        row.get(2).unwrap()
+    )
 }
 
 fn save_png_from_data_url(data_url: &str, output_path: &str) -> std::io::Result<()> {

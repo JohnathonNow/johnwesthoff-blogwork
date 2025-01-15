@@ -67,7 +67,7 @@ function onload_billiards() {
     gUndo = function (qty) {
         //lastStroke -= 2;
         lastStroke = strokes.length;
-        socket.send(JSON.stringify({ "Undo": { "i": qty } }));
+        //socket.send(JSON.stringify({ "Undo": { "i": qty } }));
     }
 
     function sendDrawing() {

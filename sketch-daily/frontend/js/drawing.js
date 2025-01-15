@@ -4,6 +4,7 @@ var strokes = new Array();
 var redraw = null;
 var redraw_other = null;
 var load_drawing = null;
+var gLastRender = 0;
 
 const cssTo32BitColor = function() {
   let ctx;
@@ -292,6 +293,7 @@ function floodFill(ctx, x, y, fillColor) {
 
     function undo()
     {
+        gLastRender = 0;
         if (strokes.length > 0) {
             var len = strokes.length;
             strokes = strokes.slice(0, strokes[strokes.length - 1]["t"]);
@@ -321,12 +323,14 @@ function floodFill(ctx, x, y, fillColor) {
 
     redraw_other = function(ctx, stks){
         //return;
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.fillStyle = 'white'; 
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
-        ctx.lineJoin = "round";
+        if (gLastRender === 0) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillStyle = 'white'; 
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
+            ctx.lineJoin = "round";
+        }
 
-        for(var i=0; i < stks.length; i++) {		
+        for(var i=gLastRender; i < stks.length; i++) {		
             if (stks[i]["o"] == "flood") {
                 floodFill(ctx, stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000, cssTo32BitColor(stks[i]["c"]));
             } else {
@@ -348,6 +352,7 @@ function floodFill(ctx, x, y, fillColor) {
                 ctx.stroke();
             }
         }
+        gLastRender = i;
     }
 
     load_drawing = function(strks) {
@@ -371,7 +376,7 @@ function floodFill(ctx, x, y, fillColor) {
     //document.getElementById("flood").onclick = flood;
     //document.getElementById("erase").onclick = erase;
     window.addEventListener("resize", function(e) {
-        console.log("resized!");
+        gLastRender = 0;
         canvas.style.height = canvas.clientWidth + "px";        
     });
     canvas.style.height = canvas.clientWidth + "px";        

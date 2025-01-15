@@ -5,7 +5,10 @@
 }
 
 
-body{
+* {
+    touch-action: manipulation;
+}
+body {
     overflow-x:hidden !important;
     width: 100%;
     margin: 0;
@@ -14,7 +17,7 @@ body{
 
 #colorpicker {
     display: inline-block;
-    width: 90%;
+    width: 100%;
     padding: 0;
 }
 #size {
@@ -278,17 +281,18 @@ input {
     outline: 1px solid black;
     display: inline-block;
     cursor: pointer;
-    height: 100px;
-    width: 100px;
+    height: 40px;
+    width: 40px;
 }
 
 .colorpicked {
-    outline: 8px solid black;
-    outline-offset: -8px;
+    outline: 4px solid black;
+    outline-offset: -4px;
 }
 
 button {
-    font-size: 48px;
+    font-size: 24px;
+    touch-action: manipulation;
 }
 
 meter {

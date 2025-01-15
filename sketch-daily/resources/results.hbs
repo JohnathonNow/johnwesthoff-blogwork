@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+    <title>Beauty is in the AI of the Beholder</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="/js/results.js"></script>
+    <link rel="stylesheet" href="/style/style.css">
+</head>
+
+<body onload="onload_results();">
+    <div align="center" id="game" style="display: block;">
+        <div id="gamecontainer">
+            <div id="progress-container">
+                <div id="drawing-container">
+                    <br/>
+                    <div id="word">
+                        {{prompt}}
+                    </div>
+                    <div id="score">
+                        {{score}}
+                    </div>
+                    <div id="gallery">
+                        <img id="drawing" class="image" width="500px" height="500px" style="display: block;" src="{{path}}"/>
+                    </div>
+                    <a href="/"><h3>Draw Today's Prompt</h3></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

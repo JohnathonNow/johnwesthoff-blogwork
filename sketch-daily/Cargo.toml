@@ -21,6 +21,7 @@ fastembed = "4"
 base64 = "0.22.1"
 rusqlite = { version = "0.32.0", features = ["bundled"] }
 sqids = "0.4.2"
+handlebars = "6.3.0"
 
 [dependencies.uuid]
 version = "1.11.0"

@@ -1,4 +1,5 @@
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
+use serde_json::json;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 use std::fs;
@@ -10,6 +11,7 @@ use clap::Parser;
 use rand::thread_rng;
 use std::collections::HashMap;
 use rand::seq::SliceRandom;
+use handlebars::Handlebars;
 
 mod packets;
 mod game;
@@ -19,11 +21,20 @@ mod args;
 struct Query {
 }
 
+struct WithTemplate<T: Serialize> {
+    name: &'static str,
+    value: T,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cliargs = args::Args::parse();
     let mut inner_game_state = game::State::new(cliargs.timelimit, cliargs.maxpoints, cliargs.endontime);
     inner_game_state.add_words(read_words(&cliargs.words)?);
+
+    let mut hb = Handlebars::new();
+    hb.register_template_file("results", "./resources/results.hbs").unwrap();
+
     let game_state: game::GameServerState = Arc::new(Mutex::new(inner_game_state));
 
     let ws_route = warp::path("word")
@@ -47,6 +58,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
             warp::reply::json(&game::info(game_state, &id))
         });
 
+    let hb = Arc::new(hb);
+    let handlebars = move |with_template| render(with_template, hb.clone());
+    let results = warp::path("results")
+        .and(warp::path::param())
+        .and(with_game_state(game_state.clone()))
+        .map(|id: String, game_state| {
+            let Info = game::info(game_state, &id);
+            WithTemplate {
+                name: "results",
+                value: json!({
+                    "prompt": &Info.prompt,
+                    "score": Info.score,
+                    "path": &Info.path.strip_prefix("frontend").unwrap_or("")
+                }),
+            }
+        }).map(handlebars);
+
     let static_files = warp::fs::dir("frontend");
     let routes = ws_route.or(static_files).or(judge).or(info);
 
@@ -67,6 +95,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     (forever.await?, server.await?);
 
     Ok(())
+}
+
+fn render<T>(template: WithTemplate<T>, hbs: Arc<Handlebars<'_>>) -> impl warp::Reply
+where
+    T: Serialize,
+{
+    let render = hbs
+        .render(template.name, &template.value)
+        .unwrap_or_else(|err| err.to_string());
+    warp::reply::html(render)
 }
 
 fn with_game_state(

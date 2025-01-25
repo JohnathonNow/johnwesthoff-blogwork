@@ -70,7 +70,7 @@ function onload_billiards() {
         //socket.send(JSON.stringify({ "Undo": { "i": qty } }));
     }
 
-    function sendDrawing() {
+    function sendDrawing(redirect) {
         var data =  canvas.toDataURL();
             //strokes.slice(lastStroke).map(x => JSON.stringify(x));
         lastStroke = strokes.length;
@@ -82,6 +82,10 @@ function onload_billiards() {
                 return response.json();
             }).then((info) => {
                 document.getElementById("score").textContent = info["Score"]["score"];
+                if (redirect) {
+                        window.location = "/results/" + info["Score"]["id"];
+                }
+                /*
                 const offscreen = new OffscreenCanvas(512 + 8 + 8, 512 + 24 + 8 + 8);
                 const octx = offscreen.getContext("2d");
                 octx.fillStyle = 'white'; 
@@ -105,6 +109,7 @@ function onload_billiards() {
                 //navigator.clipboard.write(clip).then((e) => console.log(e));
                 }
                 )
+                */
             });
         }
     }
@@ -145,8 +150,11 @@ function onload_billiards() {
             return
         }
         lastJudged = now;
-        sendDrawing();
+        sendDrawing(false);
         e.target.disabled = true;
+    };
+    document.getElementById("submit").onclick = function(e) {
+        sendDrawing(true);
     };
     fetch("/word").then((response) => {
         console.log(response);

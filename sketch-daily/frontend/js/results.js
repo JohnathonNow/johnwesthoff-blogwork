@@ -7,7 +7,7 @@ function onload_results() {
     });
     document.getElementById("share").onclick = function(e) {
         navigator.share({
-            url: window.location
+            url: "" + window.location
           }).then((e) => console.log(e));
         }
     };

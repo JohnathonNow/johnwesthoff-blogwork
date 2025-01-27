@@ -9,7 +9,6 @@ function onload_results() {
         navigator.share({
             url: "" + window.location
           }).then((e) => console.log(e));
-        }
     };
     draw.style.height = draw.clientWidth + "px";        
 }

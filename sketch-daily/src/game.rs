@@ -56,7 +56,8 @@ impl State {
                 id      INTEGER PRIMARY KEY,
                 prompt  TEXT,
                 path    TEXT,
-                score   REAL
+                score   REAL,
+                ip      TEXT
             )",
             ()
         ).unwrap();
@@ -106,17 +107,17 @@ pub fn word(game_state: GameServerState) -> String {
     gs.word.clone()
 }
 
-pub fn judge(game_state: GameServerState, image: &str) -> packets::Outgoing {
+pub fn judge(game_state: GameServerState, image: &str, ip: &str) -> packets::Outgoing {
     //TODO: No unwraps
     let mut gs = game_state.lock().unwrap();
     let path = &format!("frontend/drawings/{}-{}.png", &gs.word, &Uuid::new_v4());
     let _ = save_png_from_data_url(&image, path);
     let score = f32::max(MAX - gs.score(path), 0.0);
     let mut prepared = gs.db.prepare(
-        "INSERT INTO saves (prompt, path, score)
-        VALUES (?, ?, ?) RETURNING id"
+        "INSERT INTO saves (prompt, path, score, ip)
+        VALUES (?, ?, ?, ?) RETURNING id"
     ).unwrap();
-    let mut rows = prepared.query((&gs.word, &path, score)).unwrap();
+    let mut rows = prepared.query((&gs.word, &path, score, &ip)).unwrap();
     let id = rows.next().unwrap().unwrap().get(0).unwrap();
     println!("Wow, score is {}", score);
     let sqids = Sqids::default();

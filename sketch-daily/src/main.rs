@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::json;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
+use std::net::SocketAddr;
 use std::fs;
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -46,9 +47,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let judge = warp::path("judge")
         .and(warp::body::content_length_limit(1024 * 1024 * 32))
         .and(warp::body::json())
+        .and(warp::addr::remote())
         .and(with_game_state(game_state.clone()))
-        .map(|map: HashMap<String, String>, game_state| {
-            warp::reply::json(&game::judge(game_state, map.get("image").unwrap_or(&"".to_string())))
+        .map(|map: HashMap<String, String>, addr: Option<SocketAddr>, game_state| {
+            warp::reply::json(&game::judge(game_state, map.get("image").unwrap_or(&"".to_string()), &format!("{:?}", addr)))
         });
 
     let info = warp::path("info")

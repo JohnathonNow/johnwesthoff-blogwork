@@ -74,7 +74,7 @@ impl State {
     }
 
     async fn score(&self, file: &str) -> Result<f32, ()> {
-		let request_url = format!("http://localhost:9991/{}", file);
+		let request_url = format!("http://localhost:9991/?path={}", file);
 		let client = reqwest::Client::new();
 		let response = client
 			.get(request_url)

@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }).map(handlebars);
 
     let static_files = warp::fs::dir("frontend");
-    let routes = ws_route.or(static_files).or(judge).or(info);//.or(results);
+    let routes = ws_route.or(static_files).or(judge).or(info).or(results);
 
     let forever = task::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(1000));

@@ -149,12 +149,18 @@ pub async fn info(game_state: GameServerState, id: &str) -> (String, String, f32
             WHERE id = ?"
         ).unwrap();
         let mut rows = prepared.query([&id]).unwrap();
-        let mut row = rows.next().unwrap().unwrap();
-        Ok((
-            row.get(0).unwrap(),
-            row.get(1).unwrap(),
-            row.get(2).unwrap()
-        ))
+        let row = rows.next();
+        if let Ok(row) = row {
+            let row = row;
+            if let Some(row) = row {
+                return Ok((
+                    row.get(0).unwrap(),
+                    row.get(1).unwrap(),
+                    row.get(2).unwrap()
+                ));
+            }
+        }
+        Err(tokio_rusqlite::Error::ConnectionClosed)
     }).await.unwrap()
 }
 

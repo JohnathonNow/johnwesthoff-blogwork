@@ -1,19 +1,20 @@
 use super::packets;
-use futures::{SinkExt, StreamExt};
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use async_mutex::Mutex;
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use base64::Engine;
-use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
+use reqwest::Error;
 use std::fs;
 use uuid::Uuid;
-use rusqlite::{Connection, Result};
+use tokio_rusqlite::Connection;
 use sqids::Sqids;
+use reqwest;
 
 
 const MAX: f32 = 175.0;
@@ -24,6 +25,11 @@ pub type GameServerState = Arc<Mutex<State>>;
 pub struct Word {
     pub word: String,
     pub embedding: Vec<f32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Vector {
+    pub inner: Vec<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,20 +44,16 @@ pub struct State {
     word: String,
     offset_embedding: Vec<f32>,
     blank_embedding: Vec<f32>,
-    ai: ImageEmbedding,
     db: Connection,
 }
 
 impl State {
-    pub fn new(timelimit: i32, maxpoints: i32, end_on_time: bool) -> Self {
+    pub async fn new() -> Self {
 
-        let ai = ImageEmbedding::try_new(
-            ImageInitOptions::new(ImageEmbeddingModel::ClipVitB32).with_show_download_progress(true),
-        ).unwrap(); //we can die without the model at load
         //TODO: improve this?
         let config: Options = serde_json::from_str::<Options>(&fs::read_to_string("./resources/offsets.json").unwrap()).unwrap();
-        let db = Connection::open("./resources/saves.db").unwrap();
-        db.execute( //lol OK Brian Kelly
+        let db = Connection::open("./resources/saves.db").await.unwrap();
+        db.call(|conn| Ok(conn.execute( //lol OK Brian Kelly
             "CREATE TABLE IF NOT EXISTS saves(
                 id      INTEGER PRIMARY KEY,
                 prompt  TEXT,
@@ -60,32 +62,35 @@ impl State {
                 ip      TEXT
             )",
             ()
-        ).unwrap();
+        ))).await.unwrap();
         Self {
             word_pool: HashMap::new(),
             embedding: vec![],
             word: "".to_string(),
             offset_embedding: config.offset,
             blank_embedding: config.blank,
-            ai,
             db
         }
     }
-    fn score(&self, file: &str) -> f32 {
-        let images = vec![file];
-        if let Ok(embeddings) = self.ai.embed(images, None) {
-            embeddings[0]
+
+    async fn score(&self, file: &str) -> Result<f32, ()> {
+		let request_url = format!("http://localhost:9991/{}", file);
+		let client = reqwest::Client::new();
+		let response = client
+			.get(request_url)
+			.send().await.unwrap()
+            .json::<Vector>().await.unwrap();
+
+        return Ok(response.inner
                 .iter()
                 .zip(self.offset_embedding.iter())
                 .map(|(&x1, &x2)| (x1 - x2))
                 .zip(self.embedding.iter())
                 .map(|(x1, &x2)| (x1 - x2).powi(2))
-                .sum()
-        }
-        else {
-            f32::INFINITY
-        }
+                .sum())
+        //f32::INFINITY
     }
+
     fn restart(&mut self) {
         let date = format!("{}", Utc::now().format("%Y-%m-%d"));
         if let Some(word) = self.word_pool.get(&date) {
@@ -102,48 +107,55 @@ impl State {
     }
 }
 
-pub fn word(game_state: GameServerState) -> String {
-    let mut gs = game_state.lock().unwrap();
+pub async fn word(game_state: GameServerState) -> String {
+    let mut gs = game_state.lock().await;
     gs.word.clone()
 }
 
-pub fn judge(game_state: GameServerState, image: &str, ip: &str) -> packets::Outgoing {
+pub async fn judge(game_state: GameServerState, image: &str, ip: &str) -> Result<packets::Outgoing, ()> {
     //TODO: No unwraps
-    let mut gs = game_state.lock().unwrap();
+    let mut gs = game_state.lock().await;
     let path = &format!("frontend/drawings/{}-{}.png", &gs.word, &Uuid::new_v4());
     let _ = save_png_from_data_url(&image, path);
-    let score = f32::max(MAX - gs.score(path), 0.0);
-    let mut prepared = gs.db.prepare(
-        "INSERT INTO saves (prompt, path, score, ip)
-        VALUES (?, ?, ?, ?) RETURNING id"
-    ).unwrap();
-    let mut rows = prepared.query((&gs.word, &path, score, &ip)).unwrap();
-    let id = rows.next().unwrap().unwrap().get(0).unwrap();
+    let score = f32::max(MAX - gs.score(path).await.unwrap(), 0.0);
+    let ip = ip.to_string();
+    let word = gs.word.clone();
+    let path = path.to_string();
+    let id = gs.db.call(move |conn| {
+        let mut prepared = conn.prepare(
+            "INSERT INTO saves (prompt, path, score, ip)
+            VALUES (?, ?, ?, ?) RETURNING id"
+        ).unwrap();
+        let mut rows = prepared.query((&word, &path, score, &ip)).unwrap();
+        Ok(rows.next().unwrap().unwrap().get(0).unwrap())
+    }).await.unwrap();
     println!("Wow, score is {}", score);
     let sqids = Sqids::default();
     let id = sqids.encode(&[id]).unwrap();
-    packets::Outgoing::Score {
+    Ok(packets::Outgoing::Score {
         score,
         id
-    }
+    })
 }
 
-pub fn info(game_state: GameServerState, id: &str) -> (String, String, f32) {
+pub async fn info(game_state: GameServerState, id: &str) -> (String, String, f32) {
     //TODO: No unwraps
     let sqids = Sqids::default();
     let id = sqids.decode(&id)[0];
-    let mut gs = game_state.lock().unwrap();
-    let mut prepared = gs.db.prepare(
-        "SELECT prompt, path, score FROM saves 
-        WHERE id = ?"
-    ).unwrap();
-    let mut rows = prepared.query([&id]).unwrap();
-    let mut row = rows.next().unwrap().unwrap();
-    (
-        row.get(0).unwrap(),
-        row.get(1).unwrap(),
-        row.get(2).unwrap()
-    )
+    let mut gs = game_state.lock().await;
+    gs.db.call(move |conn| {
+        let mut prepared = conn.prepare(
+            "SELECT prompt, path, score FROM saves 
+            WHERE id = ?"
+        ).unwrap();
+        let mut rows = prepared.query([&id]).unwrap();
+        let mut row = rows.next().unwrap().unwrap();
+        Ok((
+            row.get(0).unwrap(),
+            row.get(1).unwrap(),
+            row.get(2).unwrap()
+        ))
+    }).await.unwrap()
 }
 
 fn save_png_from_data_url(data_url: &str, output_path: &str) -> std::io::Result<()> {

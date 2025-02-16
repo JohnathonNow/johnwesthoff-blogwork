@@ -1,7 +1,8 @@
 use serde::{Serialize, Deserialize};
 use serde_json::json;
 use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use async_mutex::Mutex;
 use std::net::SocketAddr;
 use std::fs;
 use std::time::Duration;
@@ -30,7 +31,7 @@ struct WithTemplate<T: Serialize> {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cliargs = args::Args::parse();
-    let mut inner_game_state = game::State::new(cliargs.timelimit, cliargs.maxpoints, cliargs.endontime);
+    let mut inner_game_state = game::State::new().await;
     inner_game_state.add_words(read_words(&cliargs.words)?);
 
     let mut hb = Handlebars::new();
@@ -40,8 +41,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let ws_route = warp::path("word")
         .and(with_game_state(game_state.clone()))
-        .map(|game_state| {
-            game::word(game_state)
+        .and_then(|game_state| async move {
+            if true {
+                Ok(game::word(game_state).await)
+            } else {
+                Err(warp::reject::not_found())
+            }
         });
 
     let judge = warp::path("judge")
@@ -49,17 +54,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .and(warp::body::json())
         .and(warp::addr::remote())
         .and(with_game_state(game_state.clone()))
-        .map(|map: HashMap<String, String>, addr: Option<SocketAddr>, game_state| {
-            warp::reply::json(&game::judge(game_state, map.get("image").unwrap_or(&"".to_string()), &format!("{:?}", addr)))
+        .and_then(|map: HashMap<String, String>, addr: Option<SocketAddr>, game_state| async move {
+            let s = game::judge(game_state, map.get("image").unwrap_or(&"".to_string()), &format!("{:?}", addr)).await;
+            if let Ok(s) = s {
+                Ok(warp::reply::json(&s))
+            } else {
+                Err(warp::reject::not_found())
+            }
         });
 
     let info = warp::path("info")
         .and(warp::path::param())
         .and(with_game_state(game_state.clone()))
-        .map(|id: String, game_state| {
-            let (prompt, path, score) = game::info(game_state, &id);
-            let Out = packets::Outgoing::Info { prompt, score, path };
-            warp::reply::json(&Out)
+        .and_then(|id: String, game_state| async move {
+            let (prompt, path, score) = game::info(game_state, &id).await;
+            let out = packets::Outgoing::Info { prompt, score, path };
+            if true {
+                Ok(warp::reply::json(&out))
+            } else {
+                Err(warp::reject::not_found())
+            }
         });
 
     let hb = Arc::new(hb);
@@ -67,28 +81,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let results = warp::path("results")
         .and(warp::path::param())
         .and(with_game_state(game_state.clone()))
-        .map(|id: String, game_state| {
-            let (prompt, path, score) = game::info(game_state, &id);
-            WithTemplate {
-                name: "results",
-                value: json!({
-                    "prompt": &prompt,
-                    "score": score,
-                    "path": &path.strip_prefix("frontend").unwrap_or(&path),
-                    "base": format!("https://ca.johnwesthoff.com"),
-                }),
+        .and_then(|id: String, game_state| async move {
+            let (prompt, path, score) = game::info(game_state, &id).await;
+            if true {
+                Ok(WithTemplate {
+                    name: "results",
+                    value: json!({
+                        "prompt": &prompt,
+                        "score": score,
+                        "path": &path.strip_prefix("frontend").unwrap_or(&path),
+                        "base": format!("https://ca.johnwesthoff.com"),
+                    }),
+                })
+            } else {
+                Err(warp::reject::not_found())
             }
         }).map(handlebars);
 
     let static_files = warp::fs::dir("frontend");
-    let routes = ws_route.or(static_files).or(judge).or(info).or(results);
+    let routes = ws_route.or(static_files).or(judge).or(info);//.or(results);
 
     let forever = task::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(1000));
 
         loop {
             interval.tick().await;
-            game_state.lock().unwrap().tick();
+            game_state.lock().await.tick();
         }
     });
     let server = if let (Some(cert), Some(key)) = (cliargs.cert, cliargs.key) {
@@ -126,7 +144,7 @@ fn with_broadcast(
 
 
 fn read_words(path: &str) -> Result<HashMap<String, game::Word>, Box<dyn Error>> {
-    let mut words: HashMap<String, game::Word> = serde_json::from_str::<HashMap<String, game::Word>>(&fs::read_to_string(path)?)?;
+    let words: HashMap<String, game::Word> = serde_json::from_str::<HashMap<String, game::Word>>(&fs::read_to_string(path)?)?;
     Ok(words)
 }
 

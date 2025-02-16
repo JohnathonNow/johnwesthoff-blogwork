@@ -10,9 +10,10 @@ prompt = "a simple doodle of " + sys.argv[1]
 img_emb = model.encode(Image.open(sys.argv[2]))
 blank_emb = model.encode(Image.open("blank.png"))
 text_emb = model.encode(prompt)
-info = json.load(open("offsets.json"))
+
 output = {
-        "score": sum(list([(x).item()**2 for x in (img_emb - info["offset"] - text_emb)]))
+        "offset": list([(x).item() for x in (img_emb - text_emb)]),
+        "blank": list([(x).item() for x in blank_emb])
 }
 
 print(json.dumps(output))

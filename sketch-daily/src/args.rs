@@ -18,16 +18,4 @@ pub struct Args {
     /// Keyfile to use
     #[arg(short, long)]
     pub key: Option<String>,
-
-    /// Game Time Limit
-    #[arg(short, long, default_value_t = 120)]
-    pub timelimit: i32,
-
-    /// Max Guess Points
-    #[arg(short, long, default_value_t = 50)]
-    pub maxpoints: i32,
-
-    /// End after time limit ends
-    #[arg(short, long, default_value_t = true)]
-    pub endontime: bool,
 }

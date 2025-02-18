@@ -6,13 +6,10 @@ use async_mutex::Mutex;
 use std::net::SocketAddr;
 use std::fs;
 use std::time::Duration;
-use tokio::sync::broadcast;
 use tokio::{task, time};
 use warp::Filter;
 use clap::Parser;
-use rand::thread_rng;
 use std::collections::HashMap;
-use rand::seq::SliceRandom;
 use handlebars::Handlebars;
 
 mod packets;
@@ -135,13 +132,6 @@ fn with_game_state(
 ) -> impl Filter<Extract = (game::GameServerState,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || game_state.clone())
 }
-
-fn with_broadcast(
-    gtx: broadcast::Sender<String>,
-) -> impl Filter<Extract = (broadcast::Sender<String>,), Error = std::convert::Infallible> + Clone {
-    warp::any().map(move || gtx.clone())
-}
-
 
 fn read_words(path: &str) -> Result<HashMap<String, game::Word>, Box<dyn Error>> {
     let words: HashMap<String, game::Word> = serde_json::from_str::<HashMap<String, game::Word>>(&fs::read_to_string(path)?)?;

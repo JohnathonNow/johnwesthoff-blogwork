@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::game;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Incoming {
     Guess { guess: String },
@@ -11,13 +10,6 @@ pub enum Incoming {
 
 #[derive(Serialize, Debug)]
 pub enum Outgoing {
-    Guess {
-        username: String,
-        guess: String,
-    },
-    NewName {
-        new_name: String,
-    },
     Score {
         score: f32,
         id: String,

@@ -1,15 +1,12 @@
 use super::packets;
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
+use base64::Engine;
 use std::collections::HashMap;
 use std::sync::{Arc};
 use async_mutex::Mutex;
-use tokio::sync::broadcast;
-use warp::ws::{Message, WebSocket};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use base64::Engine;
-use reqwest::Error;
 use std::fs;
 use uuid::Uuid;
 use tokio_rusqlite::Connection;
@@ -43,7 +40,6 @@ pub struct State {
     embedding: Vec<f32>,
     word: String,
     offset_embedding: Vec<f32>,
-    blank_embedding: Vec<f32>,
     db: Connection,
 }
 
@@ -62,13 +58,12 @@ impl State {
                 ip      TEXT
             )",
             ()
-        ))).await.unwrap();
+        ))).await.unwrap().unwrap();
         Self {
             word_pool: HashMap::new(),
             embedding: vec![],
             word: "".to_string(),
             offset_embedding: config.offset,
-            blank_embedding: config.blank,
             db
         }
     }
@@ -92,7 +87,7 @@ impl State {
     }
 
     fn restart(&mut self) {
-        let date = format!("{}", Utc::now().format("%Y-%m-%d"));
+        let date = format!("{}", Local::now().format("%Y-%m-%d"));
         if let Some(word) = self.word_pool.get(&date) {
             self.embedding = word.embedding.clone();
             self.word = word.word.clone();
@@ -108,13 +103,13 @@ impl State {
 }
 
 pub async fn word(game_state: GameServerState) -> String {
-    let mut gs = game_state.lock().await;
+    let gs = game_state.lock().await;
     gs.word.clone()
 }
 
 pub async fn judge(game_state: GameServerState, image: &str, ip: &str) -> Result<packets::Outgoing, ()> {
     //TODO: No unwraps
-    let mut gs = game_state.lock().await;
+    let gs = game_state.lock().await;
     let path = &format!("frontend/drawings/{}-{}.png", &gs.word, &Uuid::new_v4());
     let _ = save_png_from_data_url(&image, path);
     let score = f32::max(MAX - gs.score(path).await.unwrap(), 0.0);
@@ -142,7 +137,7 @@ pub async fn info(game_state: GameServerState, id: &str) -> (String, String, f32
     //TODO: No unwraps
     let sqids = Sqids::default();
     let id = sqids.decode(&id)[0];
-    let mut gs = game_state.lock().await;
+    let gs = game_state.lock().await;
     gs.db.call(move |conn| {
         let mut prepared = conn.prepare(
             "SELECT prompt, path, score FROM saves 

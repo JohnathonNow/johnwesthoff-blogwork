@@ -3,6 +3,24 @@
     <h1 id="data">hi</h1>
 </body>
 <script>
+    let isTouched = false;
+
+    // Event handler for when a touch starts
+    function handleTouchStart() {
+            isTouched = true;
+            console.log("Finger is on the screen.");
+        }
+
+    // Event handler for when a touch ends
+    function handleTouchEnd() {
+            isTouched = false;
+            console.log("Finger is off the screen.");
+        }
+
+    // Attach event listeners to the entire document
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
 
     setTimeout(function() {
             document.getElementById("data").innerText = "starting";
@@ -17,6 +35,9 @@
                     document.getElementById("data").innerText = "peering..." + peer.id;
 
                     var conn = peer.connect('jeffriewesthoff');
+                    conn.on("close", function() {
+                            window.location.reload();
+                        });
                     // on open will be launch when you successfully connect to PeerServer
                     conn.on('open', function(id){
                             conn.send("HI!");
@@ -35,16 +56,18 @@
                                             })
                                         .catch(console.error);
                                 } else {
-                            document.getElementById("data").innerText = "spin1";
+                                        document.getElementById("data").innerText = "spin1";
                                         // Handle regular non iOS 13+ devices.
                                         window.addEventListener('deviceorientation', handleOrientation);
-                            document.getElementById("data").innerText = "spin";
+                                        document.getElementById("data").innerText = "spin";
                                     }
                         });
                     function handleOrientation(event) {
                             const data = {alpha: event.alpha, beta: event.beta, gamma: event.gamma};
                             document.getElementById("data").innerText = JSON.stringify(data);
-                            conn.send(data);
+                            if (isTouched) {
+                                    conn.send(data);
+                                }
                         }
                 })
         }, 100);

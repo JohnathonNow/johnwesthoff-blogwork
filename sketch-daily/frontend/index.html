@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<head>
+    <title>Beauty is in the AI of the Beholder</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+    <script src="/js/drawing.js"></script>
+    <script src="/js/billiards.js"></script>
+    <link rel="stylesheet" href="/style/style.css">
+</head>
+
+<body onload="onload_drawing(); onload_billiards();">
+    <div align="center" id="game" style="display: block;">
+        <div id="gamecontainer">
+            <div id="progress-container">
+                <div id="drawing-container">
+                    <br/>
+                    <div id="word">
+                        <br>
+                    </div>
+                    <div id="score">
+                        <br>
+                    </div>
+                    <div id="gallery">
+                        <div id="drawing">
+                            <canvas class="image" id="canvas" style="display: block;"></canvas>
+                        </div>
+                    </div>
+                    <div id="controls">
+                        <div style="font-size: 16px">Color: <div id="colorpicker"></div></div>
+                        <div style="font-size: 16px">Stroke: <input type="range" id="size" value="5" min="1" max="50"></div>
+                        <button id="undo">Undo</button>
+                        <button id="judge">Judge</button>
+                        <button id="submit">Submit</button>
+                        <br>
+                        <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>

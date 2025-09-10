@@ -122,6 +122,7 @@ pub async fn handle(
     ws: WebSocket,
     game_state: GameServerState,
     gtx: broadcast::Sender<String>,
+    lobby_name: String,
     login_name_pre: String,
 ) {
     let login_name = truncate(&login_name_pre, MAX_NAME_LENGTH).to_string();

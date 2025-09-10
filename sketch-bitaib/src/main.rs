@@ -16,6 +16,7 @@ mod args;
 
 #[derive(Deserialize)]
 struct Query {
+    lobby: String,
     name: String,
 }
 
@@ -43,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .and(with_game_state(game_state.clone()))
         .and(with_broadcast(tx.clone()))
         .map(|query: Query, ws: warp::ws::Ws, peer_map, tx| {
-            ws.on_upgrade(move |socket| game::handle(socket, peer_map, tx, query.name))
+            ws.on_upgrade(move |socket| game::handle(socket, peer_map, tx, query.lobby, query.name))
         });
 
     let static_files = warp::fs::dir("frontend");

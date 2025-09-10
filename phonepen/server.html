@@ -1,0 +1,38 @@
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<style>
+
+.view3d {
+    width: 100px;
+    height: 100px;
+    background: red;
+    position: absolute;
+}
+
+</style>
+<script>
+    console.log("hi");
+    var peer = new Peer('jeffriewesthoff',{
+            config: {'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    //{ url: 'turn:homeo@turn.bistri.com:80', credential: 'homeo', username: 'homeo' }
+                ]} /* Sample servers, please use appropriate ones */
+        });
+    peer.on("open", function() {
+            console.log(peer.id);
+            peer.on('connection', function(conn) {
+                    conn.on("open", function() {
+                            console.log(conn);
+                            let element = document.createElement("div");
+                            element.classList.add("view3d");
+                            element.style.left = "100px";
+                            element.style.top = "100px";
+                            document.body.appendChild(element);
+                            conn.on('data', function(e){
+                                    console.log(e);
+                                      element.style.transform = `rotateZ(${-e.alpha}deg) rotateX(${-e.gamma}deg) rotateY(${ e.beta }deg)`;
+
+                                });
+                        });
+                });
+        });
+</script>

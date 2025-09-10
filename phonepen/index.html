@@ -1,0 +1,52 @@
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<body>
+    <h1 id="data">hi</h1>
+</body>
+<script>
+
+    setTimeout(function() {
+            document.getElementById("data").innerText = "starting";
+            var peer = new Peer({
+                    config: {'iceServers': [
+                            { url: 'stun:stun.l.google.com:19302' },
+                            //	  { url: 'turn:homeo@turn.bistri.com:80', credential: 'homeo' }
+                        ]} /* Sample servers, please use appropriate ones */
+                });
+
+            peer.on('open', function(id){
+                    document.getElementById("data").innerText = "peering..." + peer.id;
+
+                    var conn = peer.connect('jeffriewesthoff');
+                    // on open will be launch when you successfully connect to PeerServer
+                    conn.on('open', function(id){
+                            conn.send("HI!");
+                            document.getElementById("data").innerText = "connected to " + peer.id;
+                            // here you have conn.id
+                            // conn.send('hi!');
+                            if (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === 'function') {
+                                    // Handle iOS 13+ devices.
+                                    DeviceMotionEvent.requestPermission()
+                                        .then((state) => {
+                                                if (state === 'granted') {
+                                                        window.addEventListener('deviceorientation', handleOrientation);
+                                                    } else {
+                                                            console.error('Request to access the orientation was rejected');
+                                                        }
+                                            })
+                                        .catch(console.error);
+                                } else {
+                            document.getElementById("data").innerText = "spin1";
+                                        // Handle regular non iOS 13+ devices.
+                                        window.addEventListener('deviceorientation', handleOrientation);
+                            document.getElementById("data").innerText = "spin";
+                                    }
+                        });
+                    function handleOrientation(event) {
+                            const data = {alpha: event.alpha, beta: event.beta, gamma: event.gamma};
+                            document.getElementById("data").innerText = JSON.stringify(data);
+                            conn.send(data);
+                        }
+                })
+        }, 100);
+</script>
+

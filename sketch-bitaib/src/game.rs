@@ -2,13 +2,13 @@ use super::packets;
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use async_mutex::Mutex;
 use tokio::sync::broadcast;
 use warp::ws::{Message, WebSocket};
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use base64::Engine;
-use fastembed::{ImageEmbedding, ImageInitOptions, ImageEmbeddingModel};
 use std::fs;
 
 pub type GameServerState = Arc<Mutex<State>>;
@@ -20,6 +20,11 @@ const MAX_NAME_LENGTH: usize = 24;
 pub struct Word {
     pub word: String,
     pub embedding: Vec<f32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Vector {
+    pub inner: Vec<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,15 +40,11 @@ pub struct State {
     embedding: Vec<f32>,
     offset_embedding: Vec<f32>,
     blank_embedding: Vec<f32>,
-    ai: ImageEmbedding,
 }
 
 impl State {
     pub fn new(timelimit: i32, maxpoints: i32, end_on_time: bool) -> Self {
 
-        let ai = ImageEmbedding::try_new(
-            ImageInitOptions::new(ImageEmbeddingModel::ClipVitB32).with_show_download_progress(true),
-        ).unwrap(); //we can die without the model at load
         //TODO: improve this?
         let config: Options = serde_json::from_str::<Options>(&fs::read_to_string("./resources/offsets.json").unwrap()).unwrap();
 
@@ -54,7 +55,6 @@ impl State {
             embedding: vec![],
             offset_embedding: config.offset,
             blank_embedding: config.blank,
-            ai,
         }
     }
     fn broadcast_state(&self) {
@@ -70,20 +70,22 @@ impl State {
             tx.send(message.clone()).unwrap_or(0);
         }
     }
-    fn score(&self, file: &str) -> f32 {
-        let images = vec![file];
-        if let Ok(embeddings) = self.ai.embed(images, None) {
-            embeddings[0]
+    async fn score(&self, file: &str) -> Result<f32, ()> {
+		let request_url = format!("http://localhost:9991/?path={}", file);
+		let client = reqwest::Client::new();
+		let response = client
+			.get(request_url)
+			.send().await.unwrap()
+            .json::<Vector>().await.unwrap();
+
+        return Ok(response.inner
                 .iter()
                 .zip(self.offset_embedding.iter())
                 .map(|(&x1, &x2)| (x1 - x2))
                 .zip(self.embedding.iter())
                 .map(|(x1, &x2)| (x1 - x2).powi(2))
-                .sum()
-        }
-        else {
-            f32::INFINITY
-        }
+                .sum())
+        //f32::INFINITY
     }
     fn restart(&mut self) {
         if let Some(word) = self.word_pool.pop() {
@@ -130,7 +132,7 @@ pub async fn handle(
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
     let mut die = false;
     {
-        let mut gs = game_state.lock().unwrap();
+        let mut gs = game_state.lock().await;
         gs.sendable.set_host(&login_name);
         let pm: &mut PlayerState = gs.sendable.get_player_mut(&login_name);
         if pm.is_active() {
@@ -152,13 +154,13 @@ pub async fn handle(
 
     tokio::task::spawn(async move {
         {
-            let mut gs = game_state.lock().unwrap();
+            let mut gs = game_state.lock().await;
             let pm: &mut PlayerState = gs.sendable.get_player_mut(&login_name);
             pm.set_active(true);
         }
         let _ = gtx.send(
             serde_json::to_string(&packets::Outgoing::FullState {
-                state: &game_state.lock().unwrap().sendable,
+                state: &game_state.lock().await.sendable,
             })
             .unwrap(),
         );
@@ -182,7 +184,7 @@ pub async fn handle(
             if let Ok(packet) = serde_json::from_str::<packets::Incoming>(&message) {
                 match packet {
                     packets::Incoming::Start {} => {
-                        let mut gs = game_state.lock().unwrap();
+                        let mut gs = game_state.lock().await;
                         if let Some(host) = gs.sendable.get_host() {
                             if host == &login_name {
                                 gs.sendable.set_state(GameState::RUNNING);
@@ -196,7 +198,7 @@ pub async fn handle(
                         );
                     }
                     packets::Incoming::Restart {} => {
-                        let mut gs = game_state.lock().unwrap();
+                        let mut gs = game_state.lock().await;
                         if let Some(host) = gs.sendable.get_host() {
                             if host == &login_name {
                                 gs.restart();
@@ -219,10 +221,10 @@ pub async fn handle(
                         );
                     }
                     packets::Incoming::Image { image } => {
-                        let mut gs = game_state.lock().unwrap();
+                        let mut gs = game_state.lock().await;
                         let path = &format!("frontend/drawings/{}-{}.png", &login_name, &gs.sendable.wordname());
                         let _ = save_png_from_data_url(&image, path);
-                        let score = gs.score(path);
+                        let score = 1.0; //gs.score(path).await.unwrap();
                         println!("Wow, score is {}", score);
                         gs.sendable.get_player_mut(&login_name).score = score;
                         let _ = gtx.send(
@@ -238,7 +240,7 @@ pub async fn handle(
             }
         }
 
-        let mut x = game_state.lock().unwrap();
+        let mut x = game_state.lock().await;
         x.peer_map.remove(&login_name);
         x.sendable.get_player_mut(&login_name).set_active(false);
         x.sendable.fix_host();

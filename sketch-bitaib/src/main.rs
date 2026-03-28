@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use async_mutex::Mutex;
 use std::fs;
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -32,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let game_clone = game_state.clone();
     task::spawn(async move {
         while let Ok(msg) = _rx.recv().await {
-            for (_, sender) in game_clone.lock().unwrap().peer_map.iter() {
+            for (_, sender) in game_clone.lock().await.peer_map.iter() {
                 let _ = sender.send(msg.clone());
             }
         }
@@ -55,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         loop {
             interval.tick().await;
-            game_state.lock().unwrap().tick();
+            game_state.lock().await.tick();
         }
     });
     let server = task::spawn(async move {warp::serve(routes).run(([0, 0, 0, 0], cliargs.port)).await;});

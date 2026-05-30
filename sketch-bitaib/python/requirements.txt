@@ -1,0 +1,2 @@
+CherryPy
+sentence-transformers==3.3.0

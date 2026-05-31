@@ -118,7 +118,7 @@ function onload_drawing() {
         } else {
             var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
             if (tool == "flood") {
-                //floodFill(context, e.offsetX + border, e.offsetY + border, color);
+                floodFill(context, e.offsetX + border, e.offsetY + border, cssTo32BitColor(color));
             }
             addClick((e.offsetX + border) / context.canvas.offsetWidth * 1000,
                 (e.offsetY + border) / context.canvas.offsetHeight * 1000,
@@ -131,7 +131,7 @@ function onload_drawing() {
     }
 
     var maybetouch = function(e){
-        if (e.buttons == 1) {
+        if (e.buttons == 1 && tool != "flood") {
             touch(e);
         }
         e.preventDefault();
@@ -140,6 +140,9 @@ function onload_drawing() {
 
     var untouch = function(e){
         e.preventDefault();
+        if (tool == "flood") {
+            return;
+        }
         if (paint) {
             var b = getComputedStyle(this).getPropertyValue('border-left-width');
             b = parseInt(b);

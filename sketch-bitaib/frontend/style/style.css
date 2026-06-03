@@ -6,6 +6,51 @@
 
 body{
     overflow-x:hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#controls button {
+    font-size: 24px;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin: 5px;
+}
+
+#controls button:hover {
+    background-color: #e2e6ea;
+}
+
+#login {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    max-width: 400px;
+    margin: 20px auto;
 }
 
 #colorpicker {
@@ -49,11 +94,19 @@ input {
 }
 
 #progress-container {
-    flex: 45%;
+    flex: 65%;
 }
 
 #drawing-container {
     flex: 90%;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .full {
@@ -65,9 +118,14 @@ input {
 }
 
 #answerscontainer {
-    flex: 20%;
+    flex: 30%;
     word-wrap: break-word;
     overflow-x: hidden;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin: 10px;
 }
 
 #dummy {
@@ -84,10 +142,13 @@ input {
 .image {
     width: 60vh;
     height: 60vh;
-    border-style: ridge;
-    border-width: 5px;
-    border-color: gray;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     display: none;
+    background-color: white;
 }
 
 .finalimagecontainer {
@@ -116,7 +177,8 @@ input {
 }
 
 #canvas {
-    border-color: rgb(137, 210, 126);
+    border-color: #4CAF50;
+    border-width: 3px;
 }
 
 .image[active="false"] {
@@ -198,31 +260,31 @@ input {
     width: 50%;
     margin: 0 auto;
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #player-container {
     flex: 10%;
-    margin-top: 20px;
-    margin-left: 20px;
+    margin-top: 10px;
+    margin-left: 10px;
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #endgame-container {
     width: 50%;
     margin: 0 auto;
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .lobby-title {
@@ -270,9 +332,17 @@ input {
     height: 32px;
     cursor: pointer;
     width: 32px;
+    border-radius: 4px;
+    margin: 2px;
+    transition: transform 0.1s;
+}
+
+.colorchoice:hover {
+    transform: scale(1.1);
 }
 
 .colorpicked {
-    outline: 4px solid black;
-    outline-offset: -4px;
+    outline: 3px solid #333;
+    outline-offset: 1px;
+    transform: scale(1.1);
 }

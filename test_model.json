@@ -1,0 +1,74 @@
+[
+    {
+        "type": "prism",
+        "name": "base_box",
+        "size": [2.0, 2.0, 2.0],
+        "center": true
+    },
+    {
+        "type": "sphere",
+        "name": "sphere_cut",
+        "radius": 1.3,
+        "segments": 32
+    },
+    {
+        "type": "subtraction",
+        "name": "hollow_box",
+        "base": "base_box",
+        "subtract": ["sphere_cut"]
+    },
+    {
+        "type": "cylinder",
+        "name": "cyl",
+        "height": 4.0,
+        "radius_low": 0.5,
+        "radius_high": 0.5,
+        "segments": 32,
+        "center": true
+    },
+    {
+        "type": "union",
+        "name": "combined",
+        "objects": ["hollow_box", "cyl"]
+    },
+    {
+        "type": "split_by_plane",
+        "name": "bottom_half",
+        "object": "combined",
+        "normal": [0.0, 0.0, 1.0],
+        "origin_offset": 0.0
+    },
+    {
+        "type": "translate",
+        "name": "bottom_moved",
+        "object": "bottom_half",
+        "vector": [2.0, 0.0, 0.0]
+    },
+    {
+        "type": "circle",
+        "name": "my_circ",
+        "radius": 1.0,
+        "segments": 32
+    },
+    {
+        "type": "translational_extrusion",
+        "name": "my_extrusion",
+        "object": "my_circ",
+        "height": 2.0
+    },
+    {
+        "type": "translate",
+        "name": "my_extrusion_moved",
+        "object": "my_extrusion",
+        "vector": [-3.0, 0.0, 0.0]
+    },
+    {
+        "type": "union",
+        "name": "final_scene",
+        "objects": ["bottom_moved", "bottom_half_split", "my_extrusion_moved"]
+    },
+    {
+        "type": "export",
+        "object": "final_scene"
+    }
+]

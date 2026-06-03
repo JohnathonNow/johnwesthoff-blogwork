@@ -1,0 +1,38 @@
+name: Build and Release SEPTA Widget
+
+on:
+  push:
+    paths:
+      - 'septa-widget/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Generate Gradle Wrapper
+        working-directory: ./septa-widget
+        run: gradle wrapper
+
+      - name: Build Release APK
+        working-directory: ./septa-widget
+        run: ./gradlew assembleRelease
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: septa-widget-${{ github.run_number }}
+          name: SEPTA Widget Build ${{ github.run_number }}
+          files: septa-widget/app/build/outputs/apk/release/app-release-unsigned.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

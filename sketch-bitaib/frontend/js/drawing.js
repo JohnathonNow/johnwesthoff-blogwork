@@ -117,9 +117,6 @@ function onload_drawing() {
 				tool);
 		} else {
 			var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
-			if (tool == "flood") {
-				floodFill(context, e.offsetX + border, e.offsetY + border, cssTo32BitColor(color));
-			}
 			addClick((e.offsetX + border) / context.canvas.offsetWidth * 1000,
 				(e.offsetY + border) / context.canvas.offsetHeight * 1000,
 				color,
@@ -224,18 +221,21 @@ function onload_drawing() {
 			if (stks[i]["o"] == "flood") {
 				floodFill(ctx, stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000, cssTo32BitColor(stks[i]["c"]));
 			} else {
-				ctx.strokeStyle = stks[i]["c"];
-				ctx.lineWidth = stks[i]["s"];
+				var sss = stks[i]["s"];
+				ctx.fillStyle = stks[i]["c"];
 				ctx.globalCompositeOperation = stks[i]["m"];
-				ctx.beginPath();
-				if(stks[i]["d"] && i){
-					ctx.moveTo(stks[i-1]["x"]*ctx.canvas.width/1000, stks[i-1]["y"]*ctx.canvas.height/1000);
-				} else {
-					ctx.moveTo(stks[i]["x"]*ctx.canvas.width/1000-1, stks[i]["y"]*ctx.canvas.height/1000);
+				ctx.imageSmoothingEnabled = false;
+				var stx = (stks[i]["d"] && i ? stks[i-1]["x"] : stks[i]["x"]) * ctx.canvas.width/1000;
+				var sty = (stks[i]["d"] && i ? stks[i-1]["y"] : stks[i]["y"]) * ctx.canvas.height/1000;;
+				var enx = (stks[i]["x"]) * ctx.canvas.width/1000;
+				var eny = (stks[i]["y"]) * ctx.canvas.height/1000;
+				var dx = enx - stx;
+				var dy = eny - sty;
+				for (var t = 0; t < 100; t++) {
+					var xx = stx + (dx * t / 100.0) - sss / 2.0;
+					var yy = sty + (dy * t / 100.0) - sss / 2.0;
+					ctx.fillRect(xx, yy, sss, sss);
 				}
-				ctx.lineTo(stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000);
-				ctx.closePath();
-				ctx.stroke();
 			}
 		}
 	}
@@ -270,8 +270,7 @@ function onload_drawing() {
 		}
 	}
 
-	function floodFill(ctx, x, y, fillColor2) {
-		const fillColor = cssTo32BitColor(fillColor2);
+	function floodFill(ctx, x, y, fillColor) {
 		// read the pixels in the canvas
 		const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 

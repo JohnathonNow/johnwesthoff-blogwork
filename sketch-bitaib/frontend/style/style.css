@@ -180,6 +180,7 @@ input {
     border-color: #4CAF50;
     border-width: 3px;
     image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .image {

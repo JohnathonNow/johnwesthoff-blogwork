@@ -213,6 +213,10 @@ function floodFill(ctx, x, y, fillColor) {
   // get the color we're filling
   const targetColor = getPixel(pixelData, x, y);
 
+  if (targetColor === -1) {
+    return;
+  }
+
   // check we are actually filling a different color
   if (targetColor !== fillColor) {
     const spansToCheck = [];
@@ -318,27 +322,49 @@ function floodFill(ctx, x, y, fillColor) {
         redraw_other(context, strokes);
     }
 
+    function bresenhamLine(ctx, x0, y0, x1, y1, color, size) {
+        x0 = Math.floor(x0);
+        y0 = Math.floor(y0);
+        x1 = Math.floor(x1);
+        y1 = Math.floor(y1);
+
+        ctx.fillStyle = color;
+        let dx = Math.abs(x1 - x0);
+        let dy = Math.abs(y1 - y0);
+        let sx = (x0 < x1) ? 1 : -1;
+        let sy = (y0 < y1) ? 1 : -1;
+        let err = dx - dy;
+
+        while(true) {
+            ctx.fillRect(Math.floor(x0 - size/2), Math.floor(y0 - size/2), size, size);
+            if (x0 === x1 && y0 === y1) break;
+            let e2 = 2*err;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+        }
+    }
+
     redraw_other = function(ctx, stks){
         //return;
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.lineJoin = "round";
+        ctx.imageSmoothingEnabled = false;
 
         for(var i=0; i < stks.length; i++) {		
             if (stks[i]["o"] == "flood") {
                 floodFill(ctx, stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000, cssTo32BitColor(stks[i]["c"]));
             } else {
-                ctx.strokeStyle = stks[i]["c"];
-                ctx.lineWidth = stks[i]["s"];
                 ctx.globalCompositeOperation = stks[i]["m"];
-                ctx.beginPath();
+                let startX, startY;
                 if(stks[i]["d"] && i){
-                    ctx.moveTo(stks[i-1]["x"]*ctx.canvas.width/1000, stks[i-1]["y"]*ctx.canvas.height/1000);
+                    startX = stks[i-1]["x"]*ctx.canvas.width/1000;
+                    startY = stks[i-1]["y"]*ctx.canvas.height/1000;
                 } else {
-                    ctx.moveTo(stks[i]["x"]*ctx.canvas.width/1000-1, stks[i]["y"]*ctx.canvas.height/1000);
+                    startX = stks[i]["x"]*ctx.canvas.width/1000 - 1;
+                    startY = stks[i]["y"]*ctx.canvas.height/1000;
                 }
-                ctx.lineTo(stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000);
-                ctx.closePath();
-                ctx.stroke();
+                let endX = stks[i]["x"]*ctx.canvas.width/1000;
+                let endY = stks[i]["y"]*ctx.canvas.height/1000;
+                bresenhamLine(ctx, startX, startY, endX, endY, stks[i]["c"], stks[i]["s"]);
             }
         }
     }

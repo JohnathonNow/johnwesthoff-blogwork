@@ -107,7 +107,7 @@ function onload_drawing() {
 		border = parseInt(border);
 		var touches = e.touches;
 		if (touches) {
-			var border = getComputedStyle(this).getPropertyValue('border-left-width');
+			var border = parseInt(getComputedStyle(this).getPropertyValue('border-left-width'));
 			var rect = e.target.getBoundingClientRect();
 			addClick((touches[0].pageX + border + rect.left) / context.canvas.offsetWidth * 1000,
 				(touches[0].pageY + border + rect.top) / context.canvas.offsetHeight * 1000,
@@ -116,7 +116,7 @@ function onload_drawing() {
 				mode,
 				tool);
 		} else {
-			var border = getComputedStyle(e.target).getPropertyValue('border-left-width');
+			var border = parseInt(getComputedStyle(e.target).getPropertyValue('border-left-width'));
 			addClick((e.offsetX + border) / context.canvas.offsetWidth * 1000,
 				(e.offsetY + border) / context.canvas.offsetHeight * 1000,
 				color,
@@ -144,8 +144,8 @@ function onload_drawing() {
 			var b = getComputedStyle(this).getPropertyValue('border-left-width');
 			b = parseInt(b);
 			var touches = e.changedTouches;
+			var rect = e.target.getBoundingClientRect();
 			if (touches) {
-				var rect = e.target.getBoundingClientRect();
 				addClick((touches[0].pageX + b - rect.left) / context.canvas.offsetWidth * 1000,
 					(touches[0].pageY + b - rect.top) / context.canvas.offsetHeight * 1000,
 					color,
@@ -154,8 +154,8 @@ function onload_drawing() {
 					tool,
 					true);
 			} else {
-				addClick((e.offsetX + b) / context.canvas.offsetWidth * 1000,
-					(e.offsetY + b) / context.canvas.offsetHeight * 1000,
+				addClick((e.pageX + b - rect.left) / context.canvas.offsetWidth * 1000,
+					(e.pageY + b - rect.top) / context.canvas.offsetHeight * 1000,
 					color,
 					size,
 					mode,
@@ -232,8 +232,8 @@ function onload_drawing() {
 				var dx = enx - stx;
 				var dy = eny - sty;
 				for (var t = 0; t < 100; t++) {
-					var xx = stx + (dx * t / 100.0) - sss / 2.0;
-					var yy = sty + (dy * t / 100.0) - sss / 2.0;
+					var xx = Math.round(stx + (dx * t / 100.0) - sss / 2.0);
+					var yy = Math.round(sty + (dy * t / 100.0) - sss / 2.0);
 					ctx.fillRect(xx, yy, sss, sss);
 				}
 			}
@@ -270,7 +270,10 @@ function onload_drawing() {
 		}
 	}
 
-	function floodFill(ctx, x, y, fillColor) {
+	function floodFill(ctx, xx, yy, fillColor) {
+		var x = Math.round(xx);
+		var y = Math.round(yy);
+		console.log(x, y, fillColor);
 		// read the pixels in the canvas
 		const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 

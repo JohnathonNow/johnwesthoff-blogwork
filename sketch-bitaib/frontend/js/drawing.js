@@ -219,7 +219,7 @@ function onload_drawing() {
 
 		for(var i=0; i < stks.length; i++) {		
 			if (stks[i]["o"] == "flood") {
-				floodFill(ctx, stks[i]["x"]*ctx.canvas.width/1000, stks[i]["y"]*ctx.canvas.height/1000, cssTo32BitColor(stks[i]["c"]));
+				floodFill(ctx, Math.round(stks[i]["x"]*ctx.canvas.width/1000), Math.round(stks[i]["y"]*ctx.canvas.height/1000), cssTo32BitColor(stks[i]["c"]));
 			} else {
 				var sss = stks[i]["s"];
 				ctx.fillStyle = stks[i]["c"];
@@ -263,6 +263,8 @@ function onload_drawing() {
 
 
 	function getPixel(pixelData, x, y) {
+		x = Math.round(x);
+		y = Math.round(y);
 		if (x < 0 || y < 0 || x >= pixelData.width || y >= pixelData.height) {
 			return -1;  // impossible color
 		} else {
@@ -271,6 +273,8 @@ function onload_drawing() {
 	}
 
 	function floodFill(ctx, x, y, fillColor) {
+		x = Math.round(x);
+		y = Math.round(y);
 		// read the pixels in the canvas
 		const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 

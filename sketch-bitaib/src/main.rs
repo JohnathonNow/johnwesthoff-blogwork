@@ -39,6 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+
     let ws_route = warp::path("chat")
         .and(warp::query::<Query>())
         .and(warp::ws())

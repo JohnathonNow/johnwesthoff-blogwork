@@ -23,23 +23,25 @@ def download_images(imap, folder_name, output_dir):
         print(f"Error: Could not select folder {folder_name}.")
         return
 
-    # Search for all emails in the folder
-    status, messages = imap.search(None, "ALL")
+    # Search for unread emails in the folder
+    status, messages = imap.search(None, "UNSEEN")
     if status != "OK":
         print("Error: Could not search emails.")
         return
 
     email_ids = messages[0].split()
-    print(f"Found {len(email_ids)} emails in {folder_name}.")
+    print(f"Found {len(email_ids)} unread emails in {folder_name}.")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     for e_id in email_ids:
-        # Fetch the email message by ID
-        status, msg_data = imap.fetch(e_id, "(RFC822)")
+        # Fetch the email message by ID without setting \Seen flag
+        status, msg_data = imap.fetch(e_id, "(BODY.PEEK[])")
         if status != "OK":
             continue
+
+        has_downloaded_images = False
 
         for response_part in msg_data:
             if isinstance(response_part, tuple):
@@ -47,16 +49,17 @@ def download_images(imap, folder_name, output_dir):
                 msg = email.message_from_bytes(response_part[1])
 
                 # Subject for logging/naming if needed
-                subject, encoding = decode_header(msg["Subject"])[0] if msg["Subject"] else ("Unknown_Subject", None)
-                if isinstance(subject, bytes):
-                    # if it's a bytes, decode to str
-                    try:
-                        subject = subject.decode(encoding if encoding else "utf-8")
-                    except Exception:
-                        subject = "Unknown_Subject"
-                else:
-                    if not subject:
-                        subject = "Unknown_Subject"
+                subject_parts = decode_header(msg["Subject"]) if msg["Subject"] else []
+                subject_decoded_parts = []
+                for p, enc in subject_parts:
+                    if isinstance(p, bytes):
+                        try:
+                            subject_decoded_parts.append(p.decode(enc if enc else "utf-8"))
+                        except Exception:
+                            subject_decoded_parts.append("Unknown_Subject")
+                    else:
+                        subject_decoded_parts.append(str(p))
+                subject = "".join(subject_decoded_parts) if subject_decoded_parts else "Unknown_Subject"
 
                 # If the email message is multipart
                 if msg.is_multipart():
@@ -72,12 +75,17 @@ def download_images(imap, folder_name, output_dir):
                                 filename = part.get_filename()
                                 if filename:
                                     # decode filename if needed
-                                    decoded_filename, encoding = decode_header(filename)[0]
-                                    if isinstance(decoded_filename, bytes):
-                                        try:
-                                            decoded_filename = decoded_filename.decode(encoding if encoding else "utf-8")
-                                        except Exception:
-                                            decoded_filename = "image_attachment"
+                                    filename_parts = decode_header(filename)
+                                    decoded_filename_parts = []
+                                    for p, enc in filename_parts:
+                                        if isinstance(p, bytes):
+                                            try:
+                                                decoded_filename_parts.append(p.decode(enc if enc else "utf-8"))
+                                            except Exception:
+                                                decoded_filename_parts.append("image_attachment")
+                                        else:
+                                            decoded_filename_parts.append(str(p))
+                                    decoded_filename = "".join(decoded_filename_parts)
 
                                     filename = clean_filename(decoded_filename)
                                     filepath = os.path.join(output_dir, filename)
@@ -93,6 +101,12 @@ def download_images(imap, folder_name, output_dir):
                                     with open(filepath, "wb") as f:
                                         f.write(part.get_payload(decode=True))
                                     print(f"Downloaded: {filepath}")
+                                    has_downloaded_images = True
+
+        if has_downloaded_images:
+            # Mark the email as read
+            imap.store(e_id, '+FLAGS', '\\Seen')
+            print(f"Marked email {e_id.decode()} as read.")
 
 def main():
     parser = argparse.ArgumentParser(description="Download image attachments from Gmail.")

@@ -30,7 +30,7 @@ class TestGmailImageDownloader(unittest.TestCase):
     def test_download_images(self, mock_message_from_bytes):
         mock_imap = MagicMock()
         mock_imap.select.return_value = ("OK", [b""])
-        mock_imap.search.return_value = ("OK", [b"1 2"])
+        mock_imap.search.return_value = ("OK", [b"1"])
 
         mock_imap.fetch.return_value = ("OK", [(b"1", b"fake_email_bytes")])
 
@@ -56,6 +56,12 @@ class TestGmailImageDownloader(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.output_dir, "test.jpg")))
         with open(os.path.join(self.output_dir, "test.jpg"), "rb") as f:
             self.assertEqual(f.read(), b"fake_image_data")
+
+        # Verify search arguments
+        mock_imap.search.assert_called_with(None, "UNSEEN")
+
+        # Verify marking as read
+        mock_imap.store.assert_called_with(b"1", "+FLAGS", "\\Seen")
 
     def test_clean_filename(self):
         self.assertEqual(gmail_image_downloader.clean_filename("test file!?.jpg"), "test file__.jpg")

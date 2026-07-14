@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Booth</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #video-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        video {
+            border: 5px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background-color: #000;
+        }
+        #countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            display: none;
+            z-index: 10;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #canvas {
+            display: none;
+        }
+        #print-frame {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Photo Booth</h1>
+
+    <div id="video-container">
+        <video id="video" width="640" height="480" autoplay playsinline></video>
+        <div id="countdown"></div>
+    </div>
+
+    <button id="snap-btn">Take Photo</button>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <iframe id="print-frame" name="print-frame"></iframe>
+
+    <script>
+        const video = document.getElementById('video');
+        const snapBtn = document.getElementById('snap-btn');
+        const countdownDisplay = document.getElementById('countdown');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const printFrame = document.getElementById('print-frame');
+
+        // Request webcam access
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing webcam:", err);
+                alert("Could not access the webcam.");
+            });
+
+        snapBtn.addEventListener('click', () => {
+            snapBtn.disabled = true;
+            let counter = 5;
+            countdownDisplay.style.display = 'block';
+            countdownDisplay.innerText = counter;
+
+            const interval = setInterval(() => {
+                counter--;
+                if (counter > 0) {
+                    countdownDisplay.innerText = counter;
+                } else {
+                    clearInterval(interval);
+                    countdownDisplay.style.display = 'none';
+                    takePhoto();
+                }
+            }, 1000);
+        });
+
+        function takePhoto() {
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get image data URL
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // 1. Save the image
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `photo-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // 2. Print the image
+            printImage(dataUrl);
+
+            // Re-enable button
+            snapBtn.disabled = false;
+        }
+
+        function printImage(dataUrl) {
+            const printDoc = printFrame.contentDocument || printFrame.contentWindow.document;
+            const printWindow = printFrame.contentWindow;
+
+            printDoc.open();
+            printDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Photo</title>
+                    <style>
+                        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+                        img { max-width: 100%; max-height: 100%; }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" onload="window.print();" />
+                </body>
+                </html>
+            `);
+            printDoc.close();
+
+            // Note: The print dialog will open once the image is loaded in the iframe
+        }
+    </script>
+</body>
+</html>
